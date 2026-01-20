@@ -1,9 +1,23 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, createContext, useContext } from "react";
 import "@/App.css";
 import axios from "axios";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+// Auth Context
+const AuthContext = createContext(null);
+
+const useAuth = () => useContext(AuthContext);
+
+// Create axios instance with auth header
+const createAuthAxios = (token) => {
+  const instance = axios.create({
+    baseURL: API,
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
+  });
+  return instance;
+};
 
 // Icons as SVG components
 const HomeIcon = () => (
@@ -52,6 +66,18 @@ const XIcon = () => (
 
 const MenuIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+);
+
+const LogOutIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+);
+
+const SettingsIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+);
+
+const CheckIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
 );
 
 // Window/Door Visual Components
@@ -120,6 +146,372 @@ const DoorVisual = ({ type, width = 60, height = 100, color = "#8B4513" }) => {
         <circle cx={width - 12} cy={height/2} r="3" fill="#333"/>
       )}
     </svg>
+  );
+};
+
+// Login/Register Component
+const AuthPage = ({ onLogin }) => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    company_name: "",
+    phone: ""
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        const response = await axios.post(`${API}/auth/login`, {
+          email: formData.email,
+          password: formData.password
+        });
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+        onLogin(response.data.user, response.data.token);
+      } else {
+        await axios.post(`${API}/auth/register`, formData);
+        setSuccess("Regjistrimi u krye me sukses! Ju lutem prisni që administratori të aktivizojë llogarinë tuaj.");
+        setIsLogin(true);
+        setFormData({ ...formData, password: "" });
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail || "Ndodhi një gabim. Ju lutem provoni përsëri.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4" data-testid="auth-page">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <WindowIcon />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800">PVC Oferta</h1>
+          <p className="text-gray-500">Sistemi i Menaxhimit të Ofertave</p>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="bg-green-50 text-green-600 p-3 rounded-lg mb-4 text-sm">
+            {success}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              required
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="email@kompania.com"
+              data-testid="email-input"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Fjalëkalimi</label>
+            <input
+              type="password"
+              required
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="••••••••"
+              data-testid="password-input"
+            />
+          </div>
+
+          {!isLogin && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Emri i Kompanisë</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.company_name}
+                  onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Kompania juaj"
+                  data-testid="company-input"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Telefoni</label>
+                <input
+                  type="tel"
+                  required
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="+383 44 123 456"
+                  data-testid="phone-input"
+                />
+              </div>
+            </>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            data-testid="submit-btn"
+          >
+            {loading ? "Duke procesuar..." : isLogin ? "Kyçu" : "Regjistrohu"}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => { setIsLogin(!isLogin); setError(""); setSuccess(""); }}
+            className="text-blue-600 hover:text-blue-700 text-sm"
+          >
+            {isLogin ? "Nuk keni llogari? Regjistrohuni" : "Keni llogari? Kyçuni"}
+          </button>
+        </div>
+
+        {!isLogin && (
+          <div className="mt-6 p-4 bg-amber-50 rounded-lg">
+            <p className="text-sm text-amber-800">
+              <strong>Çmimi:</strong> 50€/muaj<br/>
+              Pas regjistrimit, administratori do t'ju aktivizojë llogarinë pasi të konfirmojë pagesën.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Admin Panel Component
+const AdminPanel = ({ api, onLogout }) => {
+  const [users, setUsers] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activatingUser, setActivatingUser] = useState(null);
+  const [months, setMonths] = useState(1);
+
+  const loadData = useCallback(async () => {
+    try {
+      const [usersRes, statsRes] = await Promise.all([
+        api.get("/admin/users"),
+        api.get("/admin/stats")
+      ]);
+      setUsers(usersRes.data);
+      setStats(statsRes.data);
+    } catch (error) {
+      console.error("Error loading admin data:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [api]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleActivate = async (userId, activate) => {
+    try {
+      await api.put(`/admin/users/${userId}/activate`, {
+        is_active: activate,
+        months: months
+      });
+      loadData();
+      setActivatingUser(null);
+    } catch (error) {
+      console.error("Error activating user:", error);
+      alert("Gabim gjatë aktivizimit!");
+    }
+  };
+
+  const handleDelete = async (userId) => {
+    if (!window.confirm("Jeni i sigurt që dëshironi të fshini këtë përdorues?")) return;
+    try {
+      await api.delete(`/admin/users/${userId}`);
+      loadData();
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      alert("Gabim gjatë fshirjes!");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100" data-testid="admin-panel">
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white">
+              <SettingsIcon />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-800">Paneli i Administratorit</h1>
+              <p className="text-sm text-gray-500">Menaxhimi i përdoruesve dhe abonimeve</p>
+            </div>
+          </div>
+          <button
+            onClick={onLogout}
+            className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg"
+          >
+            <LogOutIcon /> Dilni
+          </button>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-xl p-6 shadow-sm">
+            <p className="text-gray-500 text-sm">Përdorues Total</p>
+            <p className="text-3xl font-bold text-gray-800">{stats?.total_users || 0}</p>
+          </div>
+          <div className="bg-white rounded-xl p-6 shadow-sm">
+            <p className="text-gray-500 text-sm">Aktivë</p>
+            <p className="text-3xl font-bold text-green-600">{stats?.active_users || 0}</p>
+          </div>
+          <div className="bg-white rounded-xl p-6 shadow-sm">
+            <p className="text-gray-500 text-sm">Jo-aktivë</p>
+            <p className="text-3xl font-bold text-red-600">{stats?.inactive_users || 0}</p>
+          </div>
+          <div className="bg-white rounded-xl p-6 shadow-sm">
+            <p className="text-gray-500 text-sm">Të ardhura mujore</p>
+            <p className="text-3xl font-bold text-blue-600">{stats?.monthly_revenue || 0}€</p>
+          </div>
+        </div>
+
+        {/* Users List */}
+        <div className="bg-white rounded-xl shadow-sm">
+          <div className="p-4 border-b">
+            <h2 className="text-lg font-semibold">Përdoruesit</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Kompania</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Email</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Telefoni</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Statusi</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Abonimi skadon</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Veprime</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.id} className="border-b hover:bg-gray-50" data-testid={`user-${user.id}`}>
+                    <td className="px-4 py-3 font-medium">{user.company_name}</td>
+                    <td className="px-4 py-3 text-gray-600">{user.email}</td>
+                    <td className="px-4 py-3 text-gray-600">{user.phone}</td>
+                    <td className="px-4 py-3">
+                      {user.is_active ? (
+                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Aktiv</span>
+                      ) : (
+                        <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Jo-aktiv</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {user.subscription_end ? new Date(user.subscription_end).toLocaleDateString("sq-AL") : "-"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        {!user.is_active ? (
+                          <button
+                            onClick={() => setActivatingUser(user)}
+                            className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                          >
+                            Aktivizo
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleActivate(user.id, false)}
+                            className="px-3 py-1 bg-amber-600 text-white rounded text-sm hover:bg-amber-700"
+                          >
+                            Çaktivizo
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDelete(user.id)}
+                          className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                        >
+                          Fshi
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Activation Modal */}
+        {activatingUser && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+              <h3 className="text-lg font-semibold mb-4">Aktivizo Përdoruesin</h3>
+              <p className="text-gray-600 mb-4">
+                <strong>{activatingUser.company_name}</strong><br/>
+                {activatingUser.email}
+              </p>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Numri i muajve (50€/muaj)</label>
+                <select
+                  value={months}
+                  onChange={(e) => setMonths(parseInt(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value={1}>1 muaj - 50€</option>
+                  <option value={3}>3 muaj - 150€</option>
+                  <option value={6}>6 muaj - 300€</option>
+                  <option value={12}>12 muaj - 600€</option>
+                </select>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setActivatingUser(null)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Anulo
+                </button>
+                <button
+                  onClick={() => handleActivate(activatingUser.id, true)}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
+                  Aktivizo
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
   );
 };
 
@@ -1211,8 +1603,8 @@ const Offers = ({
   );
 };
 
-// Main App Component
-function App() {
+// Main App Content (for authenticated users)
+const AppContent = ({ user, api, onLogout }) => {
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [pageParams, setPageParams] = useState({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -1234,15 +1626,15 @@ function App() {
     try {
       setLoading(true);
       const [statsRes, customersRes, offersRes, windowsRes, doorsRes, profilesRes, glassRes, colorsRes, hardwareRes] = await Promise.all([
-        axios.get(`${API}/dashboard/stats`),
-        axios.get(`${API}/customers`),
-        axios.get(`${API}/offers`),
-        axios.get(`${API}/window-types`),
-        axios.get(`${API}/door-types`),
-        axios.get(`${API}/profiles`),
-        axios.get(`${API}/glass-types`),
-        axios.get(`${API}/colors`),
-        axios.get(`${API}/hardware`),
+        api.get("/dashboard/stats"),
+        api.get("/customers"),
+        api.get("/offers"),
+        api.get("/window-types"),
+        api.get("/door-types"),
+        api.get("/profiles"),
+        api.get("/glass-types"),
+        api.get("/colors"),
+        api.get("/hardware"),
       ]);
       
       setStats(statsRes.data);
@@ -1256,10 +1648,13 @@ function App() {
       setHardware(hardwareRes.data);
     } catch (error) {
       console.error("Error loading data:", error);
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        onLogout();
+      }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [api, onLogout]);
   
   useEffect(() => {
     loadData();
@@ -1268,7 +1663,7 @@ function App() {
   // Customer handlers
   const handleAddCustomer = async (data) => {
     try {
-      await axios.post(`${API}/customers`, data);
+      await api.post("/customers", data);
       loadData();
     } catch (error) {
       console.error("Error adding customer:", error);
@@ -1278,7 +1673,7 @@ function App() {
   
   const handleEditCustomer = async (id, data) => {
     try {
-      await axios.put(`${API}/customers/${id}`, data);
+      await api.put(`/customers/${id}`, data);
       loadData();
     } catch (error) {
       console.error("Error updating customer:", error);
@@ -1289,7 +1684,7 @@ function App() {
   const handleDeleteCustomer = async (id) => {
     if (!window.confirm("Jeni i sigurt që dëshironi të fshini këtë klient?")) return;
     try {
-      await axios.delete(`${API}/customers/${id}`);
+      await api.delete(`/customers/${id}`);
       loadData();
     } catch (error) {
       console.error("Error deleting customer:", error);
@@ -1300,7 +1695,7 @@ function App() {
   // Offer handlers
   const handleAddOffer = async (data) => {
     try {
-      await axios.post(`${API}/offers`, data);
+      await api.post("/offers", data);
       loadData();
     } catch (error) {
       console.error("Error adding offer:", error);
@@ -1311,7 +1706,7 @@ function App() {
   const handleDeleteOffer = async (id) => {
     if (!window.confirm("Jeni i sigurt që dëshironi të fshini këtë ofertë?")) return;
     try {
-      await axios.delete(`${API}/offers/${id}`);
+      await api.delete(`/offers/${id}`);
       loadData();
     } catch (error) {
       console.error("Error deleting offer:", error);
@@ -1321,7 +1716,7 @@ function App() {
   
   const handleUpdateOfferStatus = async (id, status) => {
     try {
-      await axios.put(`${API}/offers/${id}`, { status });
+      await api.put(`/offers/${id}`, { status });
       loadData();
     } catch (error) {
       console.error("Error updating offer status:", error);
@@ -1331,7 +1726,7 @@ function App() {
   
   const handleDownloadPdf = async (id) => {
     try {
-      const response = await axios.get(`${API}/offers/${id}/pdf`, {
+      const response = await api.get(`/offers/${id}/pdf`, {
         responseType: "blob",
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -1399,14 +1794,20 @@ function App() {
         } lg:translate-x-0`}
       >
         <div className="p-6">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-blue-900">
               <WindowIcon />
             </div>
             <div>
               <h1 className="text-xl font-bold">PVC Oferta</h1>
               <p className="text-xs text-blue-200">Sistemi i Ofertave</p>
             </div>
+          </div>
+          
+          {/* User Info */}
+          <div className="bg-blue-700 rounded-lg p-3 mb-6">
+            <p className="font-medium text-sm">{user.company_name}</p>
+            <p className="text-xs text-blue-200">{user.email}</p>
           </div>
           
           <nav className="space-y-2">
@@ -1429,10 +1830,12 @@ function App() {
         </div>
         
         <div className="absolute bottom-0 left-0 right-0 p-6">
-          <div className="bg-blue-700 rounded-lg p-4">
-            <p className="text-sm text-blue-200">Dritare & Dyer PVC</p>
-            <p className="text-xs text-blue-300 mt-1">Sistemi i menaxhimit të ofertave</p>
-          </div>
+          <button
+            onClick={onLogout}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+          >
+            <LogOutIcon /> Dilni
+          </button>
         </div>
       </aside>
       
@@ -1485,6 +1888,62 @@ function App() {
       </main>
     </div>
   );
+};
+
+// Main App Component
+function App() {
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check for stored auth
+    const storedToken = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+    
+    if (storedToken && storedUser) {
+      setToken(storedToken);
+      setUser(JSON.parse(storedUser));
+    }
+    setLoading(false);
+    
+    // Seed database on first load
+    axios.post(`${API}/seed`).catch(() => {});
+  }, []);
+
+  const handleLogin = (userData, authToken) => {
+    setUser(userData);
+    setToken(authToken);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
+    setToken(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!user || !token) {
+    return <AuthPage onLogin={handleLogin} />;
+  }
+
+  const api = createAuthAxios(token);
+
+  // Admin users see admin panel
+  if (user.is_admin) {
+    return <AdminPanel api={api} onLogout={handleLogout} />;
+  }
+
+  // Regular users see the main app
+  return <AppContent user={user} api={api} onLogout={handleLogout} />;
 }
 
 export default App;
