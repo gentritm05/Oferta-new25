@@ -1,4 +1,5 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Response
+from fastapi import FastAPI, APIRouter, HTTPException, Response, Depends, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -8,18 +9,25 @@ from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from io import BytesIO
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
+import jwt
+import bcrypt
 
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# JWT Settings
+JWT_SECRET = os.environ.get('JWT_SECRET', 'pvc-oferta-secret-key-2024')
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRATION_HOURS = 24 * 7  # 7 days
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -32,8 +40,52 @@ app = FastAPI()
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
+# Security
+security = HTTPBearer()
 
-# ==================== MODELS ====================
+
+# ==================== AUTH MODELS ====================
+
+class User(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    email: str
+    password_hash: str
+    company_name: str
+    phone: str
+    is_active: bool = False  # Activated by admin after payment
+    is_admin: bool = False
+    subscription_start: Optional[datetime] = None
+    subscription_end: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class UserRegister(BaseModel):
+    email: str
+    password: str
+    company_name: str
+    phone: str
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class UserResponse(BaseModel):
+    id: str
+    email: str
+    company_name: str
+    phone: str
+    is_active: bool
+    is_admin: bool
+    subscription_start: Optional[str] = None
+    subscription_end: Optional[str] = None
+    created_at: str
+
+class UserActivate(BaseModel):
+    is_active: bool
+    months: int = 1  # How many months to activate
+
+
+# ==================== EXISTING MODELS ====================
 
 class StatusCheck(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -48,20 +100,20 @@ class StatusCheckCreate(BaseModel):
 class WindowType(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: str  # e.g., "Dritare me 1 kanat", "Dritare me 2 kanata"
-    code: str  # e.g., "W1", "W2"
-    opening_type: str  # "fixed", "tilt", "turn", "tilt_turn", "sliding"
-    panels: int  # Number of panels
-    base_price_per_sqm: float  # Base price per square meter
+    name: str
+    code: str
+    opening_type: str
+    panels: int
+    base_price_per_sqm: float
     description: Optional[str] = None
-    svg_icon: Optional[str] = None  # SVG string for visual representation
+    svg_icon: Optional[str] = None
 
 class DoorType(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     code: str
-    door_style: str  # "standard", "sliding", "folding", "entrance"
+    door_style: str
     base_price_per_sqm: float
     description: Optional[str] = None
     svg_icon: Optional[str] = None
@@ -69,19 +121,19 @@ class DoorType(BaseModel):
 class Profile(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: str  # e.g., "Decco 83mm", "Aluplast 70mm"
+    name: str
     brand: str
     width_mm: int
-    insulation_coefficient: float  # U-value
-    price_multiplier: float  # Price multiplier based on profile quality
+    insulation_coefficient: float
+    price_multiplier: float
     description: Optional[str] = None
 
 class GlassType(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: str  # e.g., "FLOAT 4-16-4", "Triple Glass"
-    layers: int  # 2 for double, 3 for triple
-    u_value: float  # Thermal insulation
+    name: str
+    layers: int
+    u_value: float
     price_per_sqm: float
     description: Optional[str] = None
 
@@ -91,20 +143,21 @@ class Color(BaseModel):
     name: str
     code: str
     hex_color: str
-    price_multiplier: float  # 1.0 for white, 1.3 for colored
+    price_multiplier: float
 
 class Hardware(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
-    brand: str  # e.g., "Maco", "Winkhaus", "Roto"
-    type: str  # "handle", "lock", "hinge"
+    brand: str
+    type: str
     price: float
 
-# Customer
+# Customer - now with user_id for multi-tenancy
 class Customer(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str  # Owner of this customer
     name: str
     company: Optional[str] = None
     phone: str
@@ -123,11 +176,11 @@ class CustomerCreate(BaseModel):
     city: str
     discount_percent: float = 0.0
 
-# Offer Item (individual window/door in an offer)
+# Offer Item
 class OfferItem(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    product_type: str  # "window" or "door"
-    product_type_id: str  # Reference to WindowType or DoorType
+    product_type: str
+    product_type_id: str
     product_name: str
     width_cm: float
     height_cm: float
@@ -144,10 +197,11 @@ class OfferItem(BaseModel):
     total_price: float
     notes: Optional[str] = None
 
-# Offer
+# Offer - now with user_id for multi-tenancy
 class Offer(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str  # Owner of this offer
     offer_number: int
     customer_id: str
     customer_name: str
@@ -162,7 +216,7 @@ class Offer(BaseModel):
     total: float
     notes: Optional[str] = None
     valid_days: int = 30
-    status: str = "draft"  # draft, sent, accepted, rejected
+    status: str = "draft"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -195,18 +249,62 @@ class OfferUpdate(BaseModel):
     status: Optional[str] = None
 
 
+# ==================== AUTH HELPER FUNCTIONS ====================
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def verify_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+
+def create_token(user_id: str, is_admin: bool = False) -> str:
+    payload = {
+        "user_id": user_id,
+        "is_admin": is_admin,
+        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+def decode_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token ka skaduar")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Token i pavlefshëm")
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+    token = credentials.credentials
+    payload = decode_token(token)
+    
+    user = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="Përdoruesi nuk u gjet")
+    
+    if not user.get("is_active") and not user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Llogaria juaj nuk është aktive. Ju lutem kontaktoni administratorin.")
+    
+    return user
+
+async def get_admin_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+    user = await get_current_user(credentials)
+    if not user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Vetëm administratorët kanë qasje")
+    return user
+
+
 # ==================== HELPER FUNCTIONS ====================
 
-async def get_next_offer_number():
-    """Get the next offer number"""
-    last_offer = await db.offers.find_one(sort=[("offer_number", -1)])
+async def get_next_offer_number(user_id: str):
+    """Get the next offer number for a user"""
+    last_offer = await db.offers.find_one({"user_id": user_id}, sort=[("offer_number", -1)])
     if last_offer:
         return last_offer["offer_number"] + 1
     return 1
 
 async def calculate_item_price(item: OfferItemCreate) -> dict:
     """Calculate the price for an offer item"""
-    # Get product type (window or door)
     if item.product_type == "window":
         product = await db.window_types.find_one({"id": item.product_type_id})
     else:
@@ -215,7 +313,6 @@ async def calculate_item_price(item: OfferItemCreate) -> dict:
     if not product:
         raise HTTPException(status_code=404, detail=f"Product type not found: {item.product_type_id}")
     
-    # Get profile, glass, color
     profile = await db.profiles.find_one({"id": item.profile_id})
     glass = await db.glass_types.find_one({"id": item.glass_id})
     color = await db.colors.find_one({"id": item.color_id})
@@ -226,22 +323,12 @@ async def calculate_item_price(item: OfferItemCreate) -> dict:
     if not profile or not glass or not color:
         raise HTTPException(status_code=404, detail="Profile, glass, or color not found")
     
-    # Calculate area in square meters
     area_sqm = (item.width_cm / 100) * (item.height_cm / 100)
-    
-    # Base price calculation
     base_price = product["base_price_per_sqm"] * area_sqm
-    
-    # Apply profile multiplier
     base_price *= profile["price_multiplier"]
-    
-    # Add glass cost
     base_price += glass["price_per_sqm"] * area_sqm
-    
-    # Apply color multiplier
     base_price *= color["price_multiplier"]
     
-    # Add hardware cost
     if hardware:
         base_price += hardware["price"]
     
@@ -259,13 +346,166 @@ async def calculate_item_price(item: OfferItemCreate) -> dict:
     }
 
 
-# ==================== ROUTES ====================
+# ==================== AUTH ROUTES ====================
+
+@api_router.post("/auth/register", response_model=UserResponse)
+async def register(input: UserRegister):
+    # Check if email exists
+    existing = await db.users.find_one({"email": input.email.lower()})
+    if existing:
+        raise HTTPException(status_code=400, detail="Ky email është i regjistruar tashmë")
+    
+    # Create user
+    user = User(
+        email=input.email.lower(),
+        password_hash=hash_password(input.password),
+        company_name=input.company_name,
+        phone=input.phone,
+        is_active=False,
+        is_admin=False
+    )
+    
+    doc = user.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.users.insert_one(doc)
+    
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        company_name=user.company_name,
+        phone=user.phone,
+        is_active=user.is_active,
+        is_admin=user.is_admin,
+        subscription_start=None,
+        subscription_end=None,
+        created_at=doc['created_at']
+    )
+
+@api_router.post("/auth/login")
+async def login(input: UserLogin):
+    user = await db.users.find_one({"email": input.email.lower()}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="Email ose fjalëkalimi i gabuar")
+    
+    if not verify_password(input.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Email ose fjalëkalimi i gabuar")
+    
+    # Check subscription for non-admin users
+    if not user.get("is_admin") and not user.get("is_active"):
+        raise HTTPException(status_code=403, detail="Llogaria juaj nuk është aktive. Ju lutem kontaktoni administratorin për aktivizim.")
+    
+    # Check if subscription has expired
+    if not user.get("is_admin") and user.get("subscription_end"):
+        sub_end = datetime.fromisoformat(user["subscription_end"]) if isinstance(user["subscription_end"], str) else user["subscription_end"]
+        if sub_end < datetime.now(timezone.utc):
+            # Deactivate user
+            await db.users.update_one({"id": user["id"]}, {"$set": {"is_active": False}})
+            raise HTTPException(status_code=403, detail="Abonimi juaj ka skaduar. Ju lutem kontaktoni administratorin për rinovim.")
+    
+    token = create_token(user["id"], user.get("is_admin", False))
+    
+    return {
+        "token": token,
+        "user": {
+            "id": user["id"],
+            "email": user["email"],
+            "company_name": user["company_name"],
+            "phone": user["phone"],
+            "is_active": user["is_active"],
+            "is_admin": user.get("is_admin", False),
+            "subscription_end": user.get("subscription_end")
+        }
+    }
+
+@api_router.get("/auth/me")
+async def get_me(current_user: dict = Depends(get_current_user)):
+    return {
+        "id": current_user["id"],
+        "email": current_user["email"],
+        "company_name": current_user["company_name"],
+        "phone": current_user["phone"],
+        "is_active": current_user["is_active"],
+        "is_admin": current_user.get("is_admin", False),
+        "subscription_start": current_user.get("subscription_start"),
+        "subscription_end": current_user.get("subscription_end")
+    }
+
+
+# ==================== ADMIN ROUTES ====================
+
+@api_router.get("/admin/users")
+async def get_all_users(admin: dict = Depends(get_admin_user)):
+    users = await db.users.find({"is_admin": {"$ne": True}}, {"_id": 0, "password_hash": 0}).to_list(1000)
+    return users
+
+@api_router.put("/admin/users/{user_id}/activate")
+async def activate_user(user_id: str, input: UserActivate, admin: dict = Depends(get_admin_user)):
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="Përdoruesi nuk u gjet")
+    
+    update_data = {"is_active": input.is_active}
+    
+    if input.is_active:
+        now = datetime.now(timezone.utc)
+        # If user has existing subscription that hasn't expired, extend from that date
+        existing_end = user.get("subscription_end")
+        if existing_end:
+            existing_end_dt = datetime.fromisoformat(existing_end) if isinstance(existing_end, str) else existing_end
+            if existing_end_dt > now:
+                start_date = existing_end_dt
+            else:
+                start_date = now
+        else:
+            start_date = now
+        
+        end_date = start_date + timedelta(days=30 * input.months)
+        update_data["subscription_start"] = now.isoformat()
+        update_data["subscription_end"] = end_date.isoformat()
+    
+    await db.users.update_one({"id": user_id}, {"$set": update_data})
+    
+    updated_user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    return updated_user
+
+@api_router.delete("/admin/users/{user_id}")
+async def delete_user(user_id: str, admin: dict = Depends(get_admin_user)):
+    result = await db.users.delete_one({"id": user_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Përdoruesi nuk u gjet")
+    
+    # Also delete user's data
+    await db.customers.delete_many({"user_id": user_id})
+    await db.offers.delete_many({"user_id": user_id})
+    
+    return {"message": "Përdoruesi u fshi me sukses"}
+
+@api_router.get("/admin/stats")
+async def get_admin_stats(admin: dict = Depends(get_admin_user)):
+    total_users = await db.users.count_documents({"is_admin": {"$ne": True}})
+    active_users = await db.users.count_documents({"is_active": True, "is_admin": {"$ne": True}})
+    total_offers = await db.offers.count_documents({})
+    total_customers = await db.customers.count_documents({})
+    
+    # Monthly revenue (active users * 50€)
+    monthly_revenue = active_users * 50
+    
+    return {
+        "total_users": total_users,
+        "active_users": active_users,
+        "inactive_users": total_users - active_users,
+        "total_offers": total_offers,
+        "total_customers": total_customers,
+        "monthly_revenue": monthly_revenue
+    }
+
+
+# ==================== PUBLIC ROUTES ====================
 
 @api_router.get("/")
 async def root():
     return {"message": "PVC Dyer & Dritare - Sistemi i Ofertave"}
 
-# Status checks (keep existing)
 @api_router.post("/status", response_model=StatusCheck)
 async def create_status_check(input: StatusCheckCreate):
     status_dict = input.model_dump()
@@ -284,103 +524,53 @@ async def get_status_checks():
     return status_checks
 
 
-# ==================== WINDOW TYPES ====================
+# ==================== PRODUCT CATALOG (Public) ====================
 
 @api_router.get("/window-types", response_model=List[WindowType])
 async def get_window_types():
     windows = await db.window_types.find({}, {"_id": 0}).to_list(100)
     return windows
 
-@api_router.post("/window-types", response_model=WindowType)
-async def create_window_type(window: WindowType):
-    doc = window.model_dump()
-    await db.window_types.insert_one(doc)
-    return window
-
-
-# ==================== DOOR TYPES ====================
-
 @api_router.get("/door-types", response_model=List[DoorType])
 async def get_door_types():
     doors = await db.door_types.find({}, {"_id": 0}).to_list(100)
     return doors
-
-@api_router.post("/door-types", response_model=DoorType)
-async def create_door_type(door: DoorType):
-    doc = door.model_dump()
-    await db.door_types.insert_one(doc)
-    return door
-
-
-# ==================== PROFILES ====================
 
 @api_router.get("/profiles", response_model=List[Profile])
 async def get_profiles():
     profiles = await db.profiles.find({}, {"_id": 0}).to_list(100)
     return profiles
 
-@api_router.post("/profiles", response_model=Profile)
-async def create_profile(profile: Profile):
-    doc = profile.model_dump()
-    await db.profiles.insert_one(doc)
-    return profile
-
-
-# ==================== GLASS TYPES ====================
-
 @api_router.get("/glass-types", response_model=List[GlassType])
 async def get_glass_types():
     glasses = await db.glass_types.find({}, {"_id": 0}).to_list(100)
     return glasses
-
-@api_router.post("/glass-types", response_model=GlassType)
-async def create_glass_type(glass: GlassType):
-    doc = glass.model_dump()
-    await db.glass_types.insert_one(doc)
-    return glass
-
-
-# ==================== COLORS ====================
 
 @api_router.get("/colors", response_model=List[Color])
 async def get_colors():
     colors_list = await db.colors.find({}, {"_id": 0}).to_list(100)
     return colors_list
 
-@api_router.post("/colors", response_model=Color)
-async def create_color(color: Color):
-    doc = color.model_dump()
-    await db.colors.insert_one(doc)
-    return color
-
-
-# ==================== HARDWARE ====================
-
 @api_router.get("/hardware", response_model=List[Hardware])
 async def get_hardware():
     hardware_list = await db.hardware.find({}, {"_id": 0}).to_list(100)
     return hardware_list
 
-@api_router.post("/hardware", response_model=Hardware)
-async def create_hardware(hardware: Hardware):
-    doc = hardware.model_dump()
-    await db.hardware.insert_one(doc)
-    return hardware
 
-
-# ==================== CUSTOMERS ====================
+# ==================== CUSTOMERS (Protected + Multi-tenant) ====================
 
 @api_router.get("/customers", response_model=List[Customer])
-async def get_customers():
-    customers = await db.customers.find({}, {"_id": 0}).to_list(1000)
+async def get_customers(current_user: dict = Depends(get_current_user)):
+    # Users see only their own customers
+    customers = await db.customers.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(1000)
     for c in customers:
         if isinstance(c.get('created_at'), str):
             c['created_at'] = datetime.fromisoformat(c['created_at'])
     return customers
 
 @api_router.get("/customers/{customer_id}", response_model=Customer)
-async def get_customer(customer_id: str):
-    customer = await db.customers.find_one({"id": customer_id}, {"_id": 0})
+async def get_customer(customer_id: str, current_user: dict = Depends(get_current_user)):
+    customer = await db.customers.find_one({"id": customer_id, "user_id": current_user["id"]}, {"_id": 0})
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
     if isinstance(customer.get('created_at'), str):
@@ -388,8 +578,9 @@ async def get_customer(customer_id: str):
     return customer
 
 @api_router.post("/customers", response_model=Customer)
-async def create_customer(input: CustomerCreate):
+async def create_customer(input: CustomerCreate, current_user: dict = Depends(get_current_user)):
     customer_dict = input.model_dump()
+    customer_dict["user_id"] = current_user["id"]
     customer = Customer(**customer_dict)
     doc = customer.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
@@ -397,8 +588,8 @@ async def create_customer(input: CustomerCreate):
     return customer
 
 @api_router.put("/customers/{customer_id}", response_model=Customer)
-async def update_customer(customer_id: str, input: CustomerCreate):
-    existing = await db.customers.find_one({"id": customer_id})
+async def update_customer(customer_id: str, input: CustomerCreate, current_user: dict = Depends(get_current_user)):
+    existing = await db.customers.find_one({"id": customer_id, "user_id": current_user["id"]})
     if not existing:
         raise HTTPException(status_code=404, detail="Customer not found")
     
@@ -411,18 +602,18 @@ async def update_customer(customer_id: str, input: CustomerCreate):
     return updated
 
 @api_router.delete("/customers/{customer_id}")
-async def delete_customer(customer_id: str):
-    result = await db.customers.delete_one({"id": customer_id})
+async def delete_customer(customer_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.customers.delete_one({"id": customer_id, "user_id": current_user["id"]})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Customer not found")
     return {"message": "Customer deleted successfully"}
 
 
-# ==================== OFFERS ====================
+# ==================== OFFERS (Protected + Multi-tenant) ====================
 
 @api_router.get("/offers", response_model=List[Offer])
-async def get_offers():
-    offers = await db.offers.find({}, {"_id": 0}).to_list(1000)
+async def get_offers(current_user: dict = Depends(get_current_user)):
+    offers = await db.offers.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(1000)
     for o in offers:
         if isinstance(o.get('created_at'), str):
             o['created_at'] = datetime.fromisoformat(o['created_at'])
@@ -431,8 +622,8 @@ async def get_offers():
     return offers
 
 @api_router.get("/offers/{offer_id}", response_model=Offer)
-async def get_offer(offer_id: str):
-    offer = await db.offers.find_one({"id": offer_id}, {"_id": 0})
+async def get_offer(offer_id: str, current_user: dict = Depends(get_current_user)):
+    offer = await db.offers.find_one({"id": offer_id, "user_id": current_user["id"]}, {"_id": 0})
     if not offer:
         raise HTTPException(status_code=404, detail="Offer not found")
     if isinstance(offer.get('created_at'), str):
@@ -442,9 +633,9 @@ async def get_offer(offer_id: str):
     return offer
 
 @api_router.post("/offers", response_model=Offer)
-async def create_offer(input: OfferCreate):
-    # Get customer
-    customer = await db.customers.find_one({"id": input.customer_id})
+async def create_offer(input: OfferCreate, current_user: dict = Depends(get_current_user)):
+    # Get customer (must belong to current user)
+    customer = await db.customers.find_one({"id": input.customer_id, "user_id": current_user["id"]})
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
     
@@ -487,11 +678,12 @@ async def create_offer(input: OfferCreate):
     # Total
     total = round(taxable + vat_amount, 2)
     
-    # Get next offer number
-    offer_number = await get_next_offer_number()
+    # Get next offer number for this user
+    offer_number = await get_next_offer_number(current_user["id"])
     
     # Create offer
     offer = Offer(
+        user_id=current_user["id"],
         offer_number=offer_number,
         customer_id=input.customer_id,
         customer_name=customer["name"],
@@ -517,8 +709,8 @@ async def create_offer(input: OfferCreate):
     return offer
 
 @api_router.put("/offers/{offer_id}", response_model=Offer)
-async def update_offer(offer_id: str, input: OfferUpdate):
-    existing = await db.offers.find_one({"id": offer_id})
+async def update_offer(offer_id: str, input: OfferUpdate, current_user: dict = Depends(get_current_user)):
+    existing = await db.offers.find_one({"id": offer_id, "user_id": current_user["id"]})
     if not existing:
         raise HTTPException(status_code=404, detail="Offer not found")
     
@@ -555,7 +747,6 @@ async def update_offer(offer_id: str, input: OfferUpdate):
         update_data["items"] = processed_items
         update_data["subtotal"] = round(subtotal, 2)
         
-        # Recalculate totals
         discount_percent = input.discount_percent if input.discount_percent is not None else existing["discount_percent"]
         vat_percent = input.vat_percent if input.vat_percent is not None else existing["vat_percent"]
         
@@ -589,8 +780,8 @@ async def update_offer(offer_id: str, input: OfferUpdate):
     return updated
 
 @api_router.delete("/offers/{offer_id}")
-async def delete_offer(offer_id: str):
-    result = await db.offers.delete_one({"id": offer_id})
+async def delete_offer(offer_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.offers.delete_one({"id": offer_id, "user_id": current_user["id"]})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Offer not found")
     return {"message": "Offer deleted successfully"}
@@ -599,8 +790,8 @@ async def delete_offer(offer_id: str):
 # ==================== PDF GENERATION ====================
 
 @api_router.get("/offers/{offer_id}/pdf")
-async def generate_offer_pdf(offer_id: str):
-    offer = await db.offers.find_one({"id": offer_id}, {"_id": 0})
+async def generate_offer_pdf(offer_id: str, current_user: dict = Depends(get_current_user)):
+    offer = await db.offers.find_one({"id": offer_id, "user_id": current_user["id"]}, {"_id": 0})
     if not offer:
         raise HTTPException(status_code=404, detail="Offer not found")
     
@@ -611,8 +802,14 @@ async def generate_offer_pdf(offer_id: str):
     title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=18, alignment=TA_CENTER, textColor=colors.HexColor('#1e3a5f'))
     header_style = ParagraphStyle('Header', parent=styles['Normal'], fontSize=12, alignment=TA_LEFT, textColor=colors.HexColor('#333333'))
     normal_style = ParagraphStyle('Normal', parent=styles['Normal'], fontSize=10, alignment=TA_LEFT)
+    company_style = ParagraphStyle('Company', parent=styles['Normal'], fontSize=10, alignment=TA_RIGHT, textColor=colors.HexColor('#666666'))
     
     elements = []
+    
+    # Company header
+    elements.append(Paragraph(f"<b>{current_user['company_name']}</b>", company_style))
+    elements.append(Paragraph(f"Tel: {current_user['phone']}", company_style))
+    elements.append(Spacer(1, 10*mm))
     
     # Header
     elements.append(Paragraph("OFERTË", title_style))
@@ -713,6 +910,41 @@ async def generate_offer_pdf(offer_id: str):
     )
 
 
+# ==================== DASHBOARD STATS (Protected) ====================
+
+@api_router.get("/dashboard/stats")
+async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
+    """Get dashboard statistics for current user"""
+    total_customers = await db.customers.count_documents({"user_id": current_user["id"]})
+    total_offers = await db.offers.count_documents({"user_id": current_user["id"]})
+    
+    # Calculate total revenue from accepted offers
+    accepted_offers = await db.offers.find({"user_id": current_user["id"], "status": "accepted"}, {"_id": 0}).to_list(1000)
+    total_revenue = sum(o.get("total", 0) for o in accepted_offers)
+    
+    # Recent offers
+    recent_offers = await db.offers.find({"user_id": current_user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(5)
+    
+    # Offers by status
+    draft_count = await db.offers.count_documents({"user_id": current_user["id"], "status": "draft"})
+    sent_count = await db.offers.count_documents({"user_id": current_user["id"], "status": "sent"})
+    accepted_count = await db.offers.count_documents({"user_id": current_user["id"], "status": "accepted"})
+    rejected_count = await db.offers.count_documents({"user_id": current_user["id"], "status": "rejected"})
+    
+    return {
+        "total_customers": total_customers,
+        "total_offers": total_offers,
+        "total_revenue": round(total_revenue, 2),
+        "offers_by_status": {
+            "draft": draft_count,
+            "sent": sent_count,
+            "accepted": accepted_count,
+            "rejected": rejected_count
+        },
+        "recent_offers": recent_offers
+    }
+
+
 # ==================== SEED DATA ====================
 
 @api_router.post("/seed")
@@ -792,42 +1024,22 @@ async def seed_database():
     ]
     await db.hardware.insert_many(hardware_data)
     
+    # Create admin user
+    admin_exists = await db.users.find_one({"email": "admin@pvcoferta.com"})
+    if not admin_exists:
+        admin_user = User(
+            email="admin@pvcoferta.com",
+            password_hash=hash_password("admin123"),
+            company_name="PVC Oferta Admin",
+            phone="+383 44 000 000",
+            is_active=True,
+            is_admin=True
+        )
+        doc = admin_user.model_dump()
+        doc['created_at'] = doc['created_at'].isoformat()
+        await db.users.insert_one(doc)
+    
     return {"message": "Database seeded successfully"}
-
-
-# ==================== DASHBOARD STATS ====================
-
-@api_router.get("/dashboard/stats")
-async def get_dashboard_stats():
-    """Get dashboard statistics"""
-    total_customers = await db.customers.count_documents({})
-    total_offers = await db.offers.count_documents({})
-    
-    # Calculate total revenue from accepted offers
-    accepted_offers = await db.offers.find({"status": "accepted"}, {"_id": 0}).to_list(1000)
-    total_revenue = sum(o.get("total", 0) for o in accepted_offers)
-    
-    # Get recent offers
-    recent_offers = await db.offers.find({}, {"_id": 0}).sort("created_at", -1).to_list(5)
-    
-    # Offers by status
-    draft_count = await db.offers.count_documents({"status": "draft"})
-    sent_count = await db.offers.count_documents({"status": "sent"})
-    accepted_count = await db.offers.count_documents({"status": "accepted"})
-    rejected_count = await db.offers.count_documents({"status": "rejected"})
-    
-    return {
-        "total_customers": total_customers,
-        "total_offers": total_offers,
-        "total_revenue": round(total_revenue, 2),
-        "offers_by_status": {
-            "draft": draft_count,
-            "sent": sent_count,
-            "accepted": accepted_count,
-            "rejected": rejected_count
-        },
-        "recent_offers": recent_offers
-    }
 
 
 # Include the router in the main app
