@@ -885,19 +885,6 @@ async def delete_hardware(hardware_id: str, current_user: dict = Depends(get_cur
     
     await db.hardware.delete_one({"id": hardware_id})
     return {"message": "Aksesori u fshi me sukses"}
-async def get_glass_types():
-    glasses = await db.glass_types.find({}, {"_id": 0}).to_list(100)
-    return glasses
-
-@api_router.get("/colors", response_model=List[Color])
-async def get_colors():
-    colors_list = await db.colors.find({}, {"_id": 0}).to_list(100)
-    return colors_list
-
-@api_router.get("/hardware", response_model=List[Hardware])
-async def get_hardware():
-    hardware_list = await db.hardware.find({}, {"_id": 0}).to_list(100)
-    return hardware_list
 
 
 # ==================== CUSTOMERS (Protected + Multi-tenant) ====================
