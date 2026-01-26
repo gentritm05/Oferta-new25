@@ -76,33 +76,46 @@ const SettingsIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
 );
 
-const CheckIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+const PackageIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
 );
 
-// Window/Door Visual Components
-const WindowVisual = ({ type, width = 80, height = 80, color = "#4A90D9" }) => {
+// Professional Window/Door Visual Components
+const WindowVisual = ({ type, width = 120, height = 100, color = "#87CEEB" }) => {
   const panels = type?.panels || 1;
   const opening = type?.opening_type || "fixed";
+  const frameColor = "#4a5568";
+  const glassColor = color;
   
-  const getOpeningLines = (panelX, panelW, panelY, panelH) => {
+  const getOpeningIndicator = (panelX, panelW, panelY, panelH) => {
     switch (opening) {
       case "tilt":
-        return <line x1={panelX + panelW/2} y1={panelY} x2={panelX + panelW/2} y2={panelY + panelH} stroke="#333" strokeWidth="1" strokeDasharray="2,2"/>;
+        return (
+          <>
+            <line x1={panelX + panelW/2} y1={panelY + 5} x2={panelX + panelW/2} y2={panelY + panelH - 5} stroke="#333" strokeWidth="1" strokeDasharray="4,2"/>
+            <polygon points={`${panelX + panelW/2 - 8},${panelY + 15} ${panelX + panelW/2},${panelY + 5} ${panelX + panelW/2 + 8},${panelY + 15}`} fill="#333"/>
+          </>
+        );
       case "turn":
-        return <line x1={panelX} y1={panelY + panelH/2} x2={panelX + panelW} y2={panelY + panelH/2} stroke="#333" strokeWidth="1" strokeDasharray="2,2"/>;
+        return (
+          <>
+            <line x1={panelX + 5} y1={panelY + panelH/2} x2={panelX + panelW - 5} y2={panelY + panelH/2} stroke="#333" strokeWidth="1" strokeDasharray="4,2"/>
+            <polygon points={`${panelX + panelW - 15},${panelY + panelH/2 - 8} ${panelX + panelW - 5},${panelY + panelH/2} ${panelX + panelW - 15},${panelY + panelH/2 + 8}`} fill="#333"/>
+          </>
+        );
       case "tilt_turn":
         return (
           <>
-            <line x1={panelX} y1={panelY} x2={panelX + panelW} y2={panelY + panelH} stroke="#333" strokeWidth="1"/>
-            <line x1={panelX + panelW} y1={panelY} x2={panelX} y2={panelY + panelH} stroke="#333" strokeWidth="1"/>
+            <line x1={panelX + 5} y1={panelY + 5} x2={panelX + panelW - 5} y2={panelY + panelH - 5} stroke="#333" strokeWidth="1"/>
+            <line x1={panelX + panelW - 5} y1={panelY + 5} x2={panelX + 5} y2={panelY + panelH - 5} stroke="#333" strokeWidth="1"/>
+            <circle cx={panelX + panelW/2} cy={panelY + panelH/2} r="4" fill="#333"/>
           </>
         );
       case "sliding":
         return (
           <>
-            <line x1={panelX + 5} y1={panelY + panelH/2} x2={panelX + panelW - 5} y2={panelY + panelH/2} stroke="#333" strokeWidth="1"/>
-            <polygon points={`${panelX + panelW - 10},${panelY + panelH/2 - 3} ${panelX + panelW - 5},${panelY + panelH/2} ${panelX + panelW - 10},${panelY + panelH/2 + 3}`} fill="#333"/>
+            <line x1={panelX + 10} y1={panelY + panelH - 10} x2={panelX + panelW - 10} y2={panelY + panelH - 10} stroke="#333" strokeWidth="2"/>
+            <polygon points={`${panelX + panelW - 20},${panelY + panelH - 15} ${panelX + panelW - 10},${panelY + panelH - 10} ${panelX + panelW - 20},${panelY + panelH - 5}`} fill="#333"/>
           </>
         );
       default:
@@ -110,41 +123,109 @@ const WindowVisual = ({ type, width = 80, height = 80, color = "#4A90D9" }) => {
     }
   };
   
-  const panelWidth = (width - 10) / panels;
+  const panelWidth = (width - 12) / panels;
   
   return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-      <rect x="2" y="2" width={width - 4} height={height - 4} fill="white" stroke="#333" strokeWidth="3" rx="2"/>
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="drop-shadow-lg">
+      {/* Outer frame */}
+      <rect x="2" y="2" width={width - 4} height={height - 4} fill={frameColor} rx="3"/>
+      {/* Inner frame */}
+      <rect x="6" y="6" width={width - 12} height={height - 12} fill="#2d3748" rx="2"/>
+      
+      {/* Panels */}
       {Array.from({ length: panels }).map((_, i) => {
-        const px = 5 + i * panelWidth;
+        const px = 8 + i * panelWidth;
+        const pw = panelWidth - 4;
         return (
           <g key={i}>
-            <rect x={px} y="5" width={panelWidth - 3} height={height - 13} fill={color} fillOpacity="0.3" stroke="#666" strokeWidth="1"/>
-            {getOpeningLines(px, panelWidth - 3, 5, height - 13)}
+            {/* Glass */}
+            <rect x={px} y="8" width={pw} height={height - 20} fill={glassColor} fillOpacity="0.4" rx="1"/>
+            {/* Glass shine */}
+            <rect x={px + 2} y="10" width={pw/3} height={height - 28} fill="white" fillOpacity="0.3" rx="1"/>
+            {/* Panel frame */}
+            <rect x={px} y="8" width={pw} height={height - 20} fill="none" stroke={frameColor} strokeWidth="2" rx="1"/>
+            {/* Opening indicator */}
+            {getOpeningIndicator(px, pw, 8, height - 20)}
+            {/* Handle */}
+            {opening !== "fixed" && opening !== "sliding" && (
+              <rect x={px + pw - 12} y={height/2 - 8} width="6" height="16" fill="#718096" rx="1"/>
+            )}
           </g>
         );
       })}
+      
+      {/* Window sill */}
+      <rect x="0" y={height - 6} width={width} height="6" fill="#718096" rx="1"/>
     </svg>
   );
 };
 
-const DoorVisual = ({ type, width = 60, height = 100, color = "#8B4513" }) => {
+const DoorVisual = ({ type, width = 80, height = 120, color = "#8B4513" }) => {
   const style = type?.door_style || "standard";
+  const frameColor = "#4a5568";
   
   return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-      <rect x="2" y="2" width={width - 4} height={height - 4} fill="white" stroke="#333" strokeWidth="3" rx="2"/>
-      <rect x="5" y="5" width={width - 10} height={height - 10} fill={color} fillOpacity="0.2" stroke="#666" strokeWidth="1"/>
-      {style === "sliding" && (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="drop-shadow-lg">
+      {/* Door frame */}
+      <rect x="2" y="2" width={width - 4} height={height - 4} fill={frameColor} rx="3"/>
+      
+      {/* Door panel */}
+      <rect x="6" y="6" width={width - 12} height={height - 12} fill={color} fillOpacity="0.3" rx="2"/>
+      
+      {style === "entrance" && (
         <>
-          <line x1={width/2} y1="5" x2={width/2} y2={height - 5} stroke="#666" strokeWidth="1"/>
-          <line x1="10" y1={height/2} x2={width - 10} y2={height/2} stroke="#333" strokeWidth="1"/>
-          <polygon points={`${width - 15},${height/2 - 4} ${width - 8},${height/2} ${width - 15},${height/2 + 4}`} fill="#333"/>
+          {/* Top glass panel */}
+          <rect x="12" y="12" width={width - 24} height={height/3 - 10} fill="#87CEEB" fillOpacity="0.4" rx="2"/>
+          <rect x="12" y="12" width={width - 24} height={height/3 - 10} fill="none" stroke={frameColor} strokeWidth="2" rx="2"/>
+          {/* Bottom panels */}
+          <rect x="12" y={height/3 + 8} width={width - 24} height={height/3 - 8} fill={color} fillOpacity="0.2" rx="2" stroke={frameColor} strokeWidth="1"/>
+          <rect x="12" y={height*2/3 + 4} width={width - 24} height={height/3 - 16} fill={color} fillOpacity="0.2" rx="2" stroke={frameColor} strokeWidth="1"/>
         </>
       )}
-      {style !== "sliding" && (
-        <circle cx={width - 12} cy={height/2} r="3" fill="#333"/>
+      
+      {style === "standard" && (
+        <>
+          {/* Glass panel */}
+          <rect x="12" y="15" width={width - 24} height={height/2 - 15} fill="#87CEEB" fillOpacity="0.4" rx="2"/>
+          <rect x="12" y="15" width={width - 24} height={height/2 - 15} fill="none" stroke={frameColor} strokeWidth="2" rx="2"/>
+          {/* Bottom panel */}
+          <rect x="12" y={height/2 + 8} width={width - 24} height={height/2 - 22} fill={color} fillOpacity="0.2" rx="2" stroke={frameColor} strokeWidth="1"/>
+        </>
       )}
+      
+      {style === "sliding" && (
+        <>
+          {/* Left panel */}
+          <rect x="8" y="8" width={width/2 - 8} height={height - 18} fill="#87CEEB" fillOpacity="0.4" rx="1"/>
+          <rect x="8" y="8" width={width/2 - 8} height={height - 18} fill="none" stroke={frameColor} strokeWidth="2" rx="1"/>
+          {/* Right panel */}
+          <rect x={width/2 + 2} y="8" width={width/2 - 10} height={height - 18} fill="#87CEEB" fillOpacity="0.3" rx="1"/>
+          <rect x={width/2 + 2} y="8" width={width/2 - 10} height={height - 18} fill="none" stroke={frameColor} strokeWidth="2" rx="1"/>
+          {/* Arrow */}
+          <line x1="15" y1={height - 15} x2={width - 15} y2={height - 15} stroke="#333" strokeWidth="2"/>
+          <polygon points={`${width - 25},${height - 20} ${width - 15},${height - 15} ${width - 25},${height - 10}`} fill="#333"/>
+        </>
+      )}
+      
+      {style === "folding" && (
+        <>
+          {/* Folding panels */}
+          {[0, 1, 2].map((i) => (
+            <g key={i}>
+              <rect x={10 + i * (width - 20)/3} y="10" width={(width - 24)/3} height={height - 22} fill="#87CEEB" fillOpacity="0.4" rx="1"/>
+              <rect x={10 + i * (width - 20)/3} y="10" width={(width - 24)/3} height={height - 22} fill="none" stroke={frameColor} strokeWidth="2" rx="1"/>
+            </g>
+          ))}
+        </>
+      )}
+      
+      {(style === "standard" || style === "entrance") && (
+        /* Door handle */
+        <circle cx={width - 16} cy={height/2} r="5" fill="#718096" stroke="#4a5568" strokeWidth="2"/>
+      )}
+      
+      {/* Threshold */}
+      <rect x="0" y={height - 6} width={width} height="6" fill="#718096" rx="1"/>
     </svg>
   );
 };
@@ -194,7 +275,7 @@ const AuthPage = ({ onLogin }) => {
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4" data-testid="auth-page">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4 text-white">
             <WindowIcon />
           </div>
           <h1 className="text-2xl font-bold text-gray-800">PVC Oferta</h1>
@@ -469,6 +550,11 @@ const AdminPanel = ({ api, onLogout }) => {
               </tbody>
             </table>
           </div>
+          {users.length === 0 && (
+            <div className="p-8 text-center text-gray-500">
+              Nuk ka përdorues të regjistruar ende
+            </div>
+          )}
         </div>
 
         {/* Activation Modal */}
@@ -523,7 +609,7 @@ const Dashboard = ({ stats, onNavigate }) => {
       
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg" data-testid="stats-customers">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100 text-sm">Klientë Total</p>
@@ -533,7 +619,7 @@ const Dashboard = ({ stats, onNavigate }) => {
           </div>
         </div>
         
-        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-6 text-white shadow-lg" data-testid="stats-offers">
+        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-6 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-emerald-100 text-sm">Oferta Total</p>
@@ -543,7 +629,7 @@ const Dashboard = ({ stats, onNavigate }) => {
           </div>
         </div>
         
-        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-6 text-white shadow-lg" data-testid="stats-revenue">
+        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-6 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-amber-100 text-sm">Të Ardhura</p>
@@ -553,7 +639,7 @@ const Dashboard = ({ stats, onNavigate }) => {
           </div>
         </div>
         
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg" data-testid="stats-accepted">
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-purple-100 text-sm">Oferta të Pranuara</p>
@@ -561,6 +647,37 @@ const Dashboard = ({ stats, onNavigate }) => {
             </div>
             <span className="text-2xl">✓</span>
           </div>
+        </div>
+      </div>
+      
+      {/* Quick Actions */}
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">Veprime të Shpejta</h2>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <button
+            onClick={() => onNavigate("offers", { action: "new" })}
+            className="flex items-center justify-center gap-2 p-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <PlusIcon /> Ofertë e Re
+          </button>
+          <button
+            onClick={() => onNavigate("customers", { action: "new" })}
+            className="flex items-center justify-center gap-2 p-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+          >
+            <PlusIcon /> Klient i Ri
+          </button>
+          <button
+            onClick={() => onNavigate("products")}
+            className="flex items-center justify-center gap-2 p-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <PackageIcon /> Menaxho Produktet
+          </button>
+          <button
+            onClick={() => onNavigate("catalog")}
+            className="flex items-center justify-center gap-2 p-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            <WindowIcon /> Shiko Katalogun
+          </button>
         </div>
       </div>
       
@@ -586,39 +703,402 @@ const Dashboard = ({ stats, onNavigate }) => {
           </div>
         </div>
       </div>
-      
-      {/* Quick Actions */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Veprime të Shpejta</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button
-            onClick={() => onNavigate("offers", { action: "new" })}
-            className="flex items-center justify-center gap-2 p-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            data-testid="quick-new-offer"
-          >
-            <PlusIcon /> Ofertë e Re
-          </button>
-          <button
-            onClick={() => onNavigate("customers", { action: "new" })}
-            className="flex items-center justify-center gap-2 p-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
-            data-testid="quick-new-customer"
-          >
-            <PlusIcon /> Klient i Ri
-          </button>
-          <button
-            onClick={() => onNavigate("catalog")}
-            className="flex items-center justify-center gap-2 p-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-            data-testid="quick-catalog"
-          >
-            <WindowIcon /> Shiko Katalogun
-          </button>
-        </div>
-      </div>
     </div>
   );
 };
 
-// Product Catalog Component
+// Product Management Component
+const ProductManagement = ({ api, windowTypes, doorTypes, profiles, glassTypes, colors, hardware, onReload }) => {
+  const [activeTab, setActiveTab] = useState("windows");
+  const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [formData, setFormData] = useState({});
+
+  const tabs = [
+    { id: "windows", label: "Dritare", icon: <WindowIcon /> },
+    { id: "doors", label: "Dyer", icon: <DoorIcon /> },
+    { id: "profiles", label: "Profile" },
+    { id: "glass", label: "Xhama" },
+    { id: "colors", label: "Ngjyra" },
+    { id: "hardware", label: "Aksesorë" },
+  ];
+
+  const getInitialFormData = () => {
+    switch (activeTab) {
+      case "windows":
+        return { name: "", code: "", opening_type: "fixed", panels: 1, base_price_per_sqm: 0, description: "" };
+      case "doors":
+        return { name: "", code: "", door_style: "standard", base_price_per_sqm: 0, description: "" };
+      case "profiles":
+        return { name: "", brand: "", width_mm: 70, insulation_coefficient: 1.2, price_multiplier: 1.0, description: "" };
+      case "glass":
+        return { name: "", layers: 2, u_value: 1.1, price_per_sqm: 0, description: "" };
+      case "colors":
+        return { name: "", code: "", hex_color: "#FFFFFF", price_multiplier: 1.0 };
+      case "hardware":
+        return { name: "", brand: "", type: "mechanism", price: 0 };
+      default:
+        return {};
+    }
+  };
+
+  const getApiEndpoint = () => {
+    const endpoints = {
+      windows: "window-types",
+      doors: "door-types",
+      profiles: "profiles",
+      glass: "glass-types",
+      colors: "colors",
+      hardware: "hardware"
+    };
+    return endpoints[activeTab];
+  };
+
+  const getCurrentData = () => {
+    switch (activeTab) {
+      case "windows": return windowTypes;
+      case "doors": return doorTypes;
+      case "profiles": return profiles;
+      case "glass": return glassTypes;
+      case "colors": return colors;
+      case "hardware": return hardware;
+      default: return [];
+    }
+  };
+
+  const openAddForm = () => {
+    setEditingItem(null);
+    setFormData(getInitialFormData());
+    setShowForm(true);
+  };
+
+  const openEditForm = (item) => {
+    setEditingItem(item);
+    setFormData({ ...item });
+    setShowForm(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const endpoint = getApiEndpoint();
+      if (editingItem) {
+        await api.put(`/${endpoint}/${editingItem.id}`, formData);
+      } else {
+        await api.post(`/${endpoint}`, formData);
+      }
+      setShowForm(false);
+      onReload();
+    } catch (error) {
+      console.error("Error saving:", error);
+      alert(error.response?.data?.detail || "Gabim gjatë ruajtjes!");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Jeni i sigurt që dëshironi të fshini këtë?")) return;
+    try {
+      await api.delete(`/${getApiEndpoint()}/${id}`);
+      onReload();
+    } catch (error) {
+      console.error("Error deleting:", error);
+      alert(error.response?.data?.detail || "Gabim gjatë fshirjes!");
+    }
+  };
+
+  const renderForm = () => {
+    switch (activeTab) {
+      case "windows":
+        return (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Emri *</label>
+                <input type="text" required value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kodi *</label>
+                <input type="text" required value={formData.code || ""} onChange={(e) => setFormData({ ...formData, code: e.target.value })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Lloji i Hapjes</label>
+                <select value={formData.opening_type || "fixed"} onChange={(e) => setFormData({ ...formData, opening_type: e.target.value })} className="w-full px-3 py-2 border rounded-lg">
+                  <option value="fixed">Fikse</option>
+                  <option value="tilt">Përkulëse</option>
+                  <option value="turn">Rrotulluese</option>
+                  <option value="tilt_turn">Përkul-Rrotull</option>
+                  <option value="sliding">Rrëshqitëse</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kanata</label>
+                <input type="number" min="1" max="4" value={formData.panels || 1} onChange={(e) => setFormData({ ...formData, panels: parseInt(e.target.value) })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Çmimi/m² (€) *</label>
+                <input type="number" step="0.01" required value={formData.base_price_per_sqm || ""} onChange={(e) => setFormData({ ...formData, base_price_per_sqm: parseFloat(e.target.value) })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Përshkrimi</label>
+              <input type="text" value={formData.description || ""} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full px-3 py-2 border rounded-lg"/>
+            </div>
+          </>
+        );
+      case "doors":
+        return (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Emri *</label>
+                <input type="text" required value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kodi *</label>
+                <input type="text" required value={formData.code || ""} onChange={(e) => setFormData({ ...formData, code: e.target.value })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Stili</label>
+                <select value={formData.door_style || "standard"} onChange={(e) => setFormData({ ...formData, door_style: e.target.value })} className="w-full px-3 py-2 border rounded-lg">
+                  <option value="standard">Standarde</option>
+                  <option value="entrance">Hyrëse</option>
+                  <option value="sliding">Rrëshqitëse</option>
+                  <option value="folding">Palosëse</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Çmimi/m² (€) *</label>
+                <input type="number" step="0.01" required value={formData.base_price_per_sqm || ""} onChange={(e) => setFormData({ ...formData, base_price_per_sqm: parseFloat(e.target.value) })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+            </div>
+          </>
+        );
+      case "profiles":
+        return (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Emri *</label>
+                <input type="text" required value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Marka *</label>
+                <input type="text" required value={formData.brand || ""} onChange={(e) => setFormData({ ...formData, brand: e.target.value })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gjerësia (mm)</label>
+                <input type="number" value={formData.width_mm || 70} onChange={(e) => setFormData({ ...formData, width_mm: parseInt(e.target.value) })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Koef. Izolimi</label>
+                <input type="number" step="0.1" value={formData.insulation_coefficient || 1.2} onChange={(e) => setFormData({ ...formData, insulation_coefficient: parseFloat(e.target.value) })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Shumëzuesi</label>
+                <input type="number" step="0.01" value={formData.price_multiplier || 1.0} onChange={(e) => setFormData({ ...formData, price_multiplier: parseFloat(e.target.value) })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+            </div>
+          </>
+        );
+      case "glass":
+        return (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Emri *</label>
+              <input type="text" required value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg"/>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Shtresa</label>
+                <input type="number" min="1" value={formData.layers || 2} onChange={(e) => setFormData({ ...formData, layers: parseInt(e.target.value) })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Vlera U</label>
+                <input type="number" step="0.1" value={formData.u_value || 1.1} onChange={(e) => setFormData({ ...formData, u_value: parseFloat(e.target.value) })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Çmimi/m² (€) *</label>
+                <input type="number" step="0.01" required value={formData.price_per_sqm || ""} onChange={(e) => setFormData({ ...formData, price_per_sqm: parseFloat(e.target.value) })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+            </div>
+          </>
+        );
+      case "colors":
+        return (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Emri *</label>
+                <input type="text" required value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kodi *</label>
+                <input type="text" required value={formData.code || ""} onChange={(e) => setFormData({ ...formData, code: e.target.value })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ngjyra</label>
+                <div className="flex gap-2">
+                  <input type="color" value={formData.hex_color || "#FFFFFF"} onChange={(e) => setFormData({ ...formData, hex_color: e.target.value })} className="w-16 h-10 rounded cursor-pointer"/>
+                  <input type="text" value={formData.hex_color || "#FFFFFF"} onChange={(e) => setFormData({ ...formData, hex_color: e.target.value })} className="flex-1 px-3 py-2 border rounded-lg"/>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Shumëzuesi</label>
+                <input type="number" step="0.01" value={formData.price_multiplier || 1.0} onChange={(e) => setFormData({ ...formData, price_multiplier: parseFloat(e.target.value) })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+            </div>
+          </>
+        );
+      case "hardware":
+        return (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Emri *</label>
+                <input type="text" required value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Marka *</label>
+                <input type="text" required value={formData.brand || ""} onChange={(e) => setFormData({ ...formData, brand: e.target.value })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Lloji</label>
+                <select value={formData.type || "mechanism"} onChange={(e) => setFormData({ ...formData, type: e.target.value })} className="w-full px-3 py-2 border rounded-lg">
+                  <option value="mechanism">Mekanizëm</option>
+                  <option value="handle">Dorezë</option>
+                  <option value="lock">Bravë</option>
+                  <option value="hinge">Menteshë</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Çmimi (€) *</label>
+                <input type="number" step="0.01" required value={formData.price || ""} onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })} className="w-full px-3 py-2 border rounded-lg"/>
+              </div>
+            </div>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="space-y-6" data-testid="product-management">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-800">Menaxhimi i Produkteve</h1>
+        <button onClick={openAddForm} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          <PlusIcon /> Shto të Ri
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex flex-wrap gap-2 border-b">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-4 py-2 font-medium transition-colors ${
+              activeTab === tab.id ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {tab.icon} {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Products Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {getCurrentData().map((item) => (
+          <div key={item.id} className="bg-white rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
+            {/* Visual for windows/doors */}
+            {activeTab === "windows" && (
+              <div className="flex justify-center mb-4">
+                <WindowVisual type={item} width={120} height={100} />
+              </div>
+            )}
+            {activeTab === "doors" && (
+              <div className="flex justify-center mb-4">
+                <DoorVisual type={item} width={80} height={110} />
+              </div>
+            )}
+            {activeTab === "colors" && (
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 rounded-full border-2 border-gray-200" style={{ backgroundColor: item.hex_color }}/>
+              </div>
+            )}
+            
+            <h3 className="font-semibold text-gray-800">{item.name}</h3>
+            {item.brand && <p className="text-sm text-gray-500">{item.brand}</p>}
+            {item.code && <span className="inline-block mt-1 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">{item.code}</span>}
+            
+            <div className="mt-2 text-sm">
+              {item.base_price_per_sqm !== undefined && (
+                <p className="font-bold text-blue-600">{item.base_price_per_sqm}€/m²</p>
+              )}
+              {item.price_per_sqm !== undefined && (
+                <p className="font-bold text-blue-600">{item.price_per_sqm}€/m²</p>
+              )}
+              {item.price !== undefined && activeTab === "hardware" && (
+                <p className="font-bold text-blue-600">{item.price}€</p>
+              )}
+              {item.price_multiplier !== undefined && (
+                <p className="text-gray-500">Shumëzues: x{item.price_multiplier}</p>
+              )}
+            </div>
+            
+            <div className="flex gap-2 mt-3">
+              <button onClick={() => openEditForm(item)} className="flex-1 flex items-center justify-center gap-1 px-2 py-1 text-sm bg-blue-50 text-blue-600 rounded hover:bg-blue-100">
+                <EditIcon /> Ndrysho
+              </button>
+              {item.is_custom && (
+                <button onClick={() => handleDelete(item.id)} className="flex items-center justify-center gap-1 px-2 py-1 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100">
+                  <TrashIcon />
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Add/Edit Modal */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">{editingItem ? "Ndrysho" : "Shto të Ri"}</h2>
+              <button onClick={() => setShowForm(false)} className="text-gray-500 hover:text-gray-700">
+                <XIcon />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {renderForm()}
+              <div className="flex gap-2 pt-4">
+                <button type="button" onClick={() => setShowForm(false)} className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">
+                  Anulo
+                </button>
+                <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                  Ruaj
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Product Catalog Component (simplified)
 const ProductCatalog = ({ windowTypes, doorTypes, profiles, glassTypes, colors, hardware }) => {
   const [activeTab, setActiveTab] = useState("windows");
   
@@ -626,7 +1106,6 @@ const ProductCatalog = ({ windowTypes, doorTypes, profiles, glassTypes, colors, 
     <div className="space-y-6" data-testid="product-catalog">
       <h1 className="text-2xl font-bold text-gray-800">Katalogu i Produkteve</h1>
       
-      {/* Tabs */}
       <div className="flex flex-wrap gap-2 border-b">
         {[
           { id: "windows", label: "Dritare", icon: <WindowIcon /> },
@@ -640,28 +1119,24 @@ const ProductCatalog = ({ windowTypes, doorTypes, profiles, glassTypes, colors, 
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 px-4 py-2 font-medium transition-colors ${
-              activeTab === tab.id
-                ? "text-blue-600 border-b-2 border-blue-600"
-                : "text-gray-500 hover:text-gray-700"
+              activeTab === tab.id ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-500 hover:text-gray-700"
             }`}
-            data-testid={`tab-${tab.id}`}
           >
             {tab.icon} {tab.label}
           </button>
         ))}
       </div>
       
-      {/* Windows */}
       {activeTab === "windows" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {windowTypes.map((w) => (
-            <div key={w.id} className="bg-white rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow" data-testid={`window-${w.id}`}>
+            <div key={w.id} className="bg-white rounded-xl shadow-md p-4">
               <div className="flex justify-center mb-4">
-                <WindowVisual type={w} width={100} height={80} />
+                <WindowVisual type={w} width={140} height={110} />
               </div>
               <h3 className="font-semibold text-gray-800">{w.name}</h3>
-              <p className="text-sm text-gray-500 mb-2">{w.description}</p>
-              <div className="flex justify-between items-center">
+              <p className="text-sm text-gray-500">{w.description}</p>
+              <div className="flex justify-between items-center mt-2">
                 <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">{w.code}</span>
                 <span className="font-bold text-blue-600">{w.base_price_per_sqm}€/m²</span>
               </div>
@@ -670,17 +1145,16 @@ const ProductCatalog = ({ windowTypes, doorTypes, profiles, glassTypes, colors, 
         </div>
       )}
       
-      {/* Doors */}
       {activeTab === "doors" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {doorTypes.map((d) => (
-            <div key={d.id} className="bg-white rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow" data-testid={`door-${d.id}`}>
+            <div key={d.id} className="bg-white rounded-xl shadow-md p-4">
               <div className="flex justify-center mb-4">
-                <DoorVisual type={d} width={70} height={100} />
+                <DoorVisual type={d} width={90} height={130} />
               </div>
               <h3 className="font-semibold text-gray-800">{d.name}</h3>
-              <p className="text-sm text-gray-500 mb-2">{d.description}</p>
-              <div className="flex justify-between items-center">
+              <p className="text-sm text-gray-500">{d.description}</p>
+              <div className="flex justify-between items-center mt-2">
                 <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded">{d.code}</span>
                 <span className="font-bold text-amber-600">{d.base_price_per_sqm}€/m²</span>
               </div>
@@ -689,49 +1163,43 @@ const ProductCatalog = ({ windowTypes, doorTypes, profiles, glassTypes, colors, 
         </div>
       )}
       
-      {/* Profiles */}
       {activeTab === "profiles" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {profiles.map((p) => (
-            <div key={p.id} className="bg-white rounded-xl shadow-md p-4" data-testid={`profile-${p.id}`}>
+            <div key={p.id} className="bg-white rounded-xl shadow-md p-4">
               <h3 className="font-semibold text-gray-800">{p.name}</h3>
               <p className="text-sm text-gray-500">{p.brand}</p>
               <div className="mt-2 space-y-1 text-sm">
                 <p><span className="text-gray-500">Gjerësia:</span> {p.width_mm}mm</p>
                 <p><span className="text-gray-500">Koef. Izolimit:</span> {p.insulation_coefficient} W/m²K</p>
-                <p><span className="text-gray-500">Shumaxësi:</span> x{p.price_multiplier}</p>
+                <p><span className="text-gray-500">Shumëzuesi:</span> x{p.price_multiplier}</p>
               </div>
             </div>
           ))}
         </div>
       )}
       
-      {/* Glass */}
       {activeTab === "glass" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {glassTypes.map((g) => (
-            <div key={g.id} className="bg-white rounded-xl shadow-md p-4" data-testid={`glass-${g.id}`}>
+            <div key={g.id} className="bg-white rounded-xl shadow-md p-4">
               <h3 className="font-semibold text-gray-800">{g.name}</h3>
               <p className="text-sm text-gray-500">{g.description}</p>
               <div className="mt-2 space-y-1 text-sm">
                 <p><span className="text-gray-500">Shtresa:</span> {g.layers}</p>
                 <p><span className="text-gray-500">Vlera U:</span> {g.u_value} W/m²K</p>
-                <p><span className="text-gray-500">Çmimi:</span> <span className="font-bold text-blue-600">{g.price_per_sqm}€/m²</span></p>
+                <p className="font-bold text-blue-600">{g.price_per_sqm}€/m²</p>
               </div>
             </div>
           ))}
         </div>
       )}
       
-      {/* Colors */}
       {activeTab === "colors" && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
           {colors.map((c) => (
-            <div key={c.id} className="bg-white rounded-xl shadow-md p-4 text-center" data-testid={`color-${c.id}`}>
-              <div
-                className="w-16 h-16 rounded-full mx-auto mb-2 border-2 border-gray-200"
-                style={{ backgroundColor: c.hex_color }}
-              />
+            <div key={c.id} className="bg-white rounded-xl shadow-md p-4 text-center">
+              <div className="w-16 h-16 rounded-full mx-auto mb-2 border-2 border-gray-200" style={{ backgroundColor: c.hex_color }}/>
               <h3 className="font-semibold text-gray-800">{c.name}</h3>
               <p className="text-xs text-gray-500">{c.code}</p>
               <p className="text-sm text-blue-600">x{c.price_multiplier}</p>
@@ -740,11 +1208,10 @@ const ProductCatalog = ({ windowTypes, doorTypes, profiles, glassTypes, colors, 
         </div>
       )}
       
-      {/* Hardware */}
       {activeTab === "hardware" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {hardware.map((h) => (
-            <div key={h.id} className="bg-white rounded-xl shadow-md p-4" data-testid={`hardware-${h.id}`}>
+            <div key={h.id} className="bg-white rounded-xl shadow-md p-4">
               <h3 className="font-semibold text-gray-800">{h.name}</h3>
               <p className="text-sm text-gray-500">{h.brand}</p>
               <div className="mt-2 flex justify-between items-center">
@@ -759,257 +1226,77 @@ const ProductCatalog = ({ windowTypes, doorTypes, profiles, glassTypes, colors, 
   );
 };
 
-// Customers Component
+// Customers Component (keep it shorter due to file size limits)
 const Customers = ({ customers, onAdd, onEdit, onDelete, initialAction }) => {
   const [showForm, setShowForm] = useState(initialAction === "new");
   const [editingCustomer, setEditingCustomer] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    company: "",
-    phone: "",
-    email: "",
-    address: "",
-    city: "",
-    discount_percent: 0,
-  });
+  const [formData, setFormData] = useState({ name: "", company: "", phone: "", email: "", address: "", city: "", discount_percent: 0 });
   const [searchTerm, setSearchTerm] = useState("");
   
-  const resetForm = () => {
-    setFormData({ name: "", company: "", phone: "", email: "", address: "", city: "", discount_percent: 0 });
-    setEditingCustomer(null);
-    setShowForm(false);
-  };
+  const resetForm = () => { setFormData({ name: "", company: "", phone: "", email: "", address: "", city: "", discount_percent: 0 }); setEditingCustomer(null); setShowForm(false); };
   
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (editingCustomer) {
-      await onEdit(editingCustomer.id, formData);
-    } else {
-      await onAdd(formData);
-    }
-    resetForm();
-  };
+  const handleSubmit = async (e) => { e.preventDefault(); if (editingCustomer) { await onEdit(editingCustomer.id, formData); } else { await onAdd(formData); } resetForm(); };
   
-  const startEdit = (customer) => {
-    setFormData({
-      name: customer.name,
-      company: customer.company || "",
-      phone: customer.phone,
-      email: customer.email || "",
-      address: customer.address,
-      city: customer.city,
-      discount_percent: customer.discount_percent || 0,
-    });
-    setEditingCustomer(customer);
-    setShowForm(true);
-  };
+  const startEdit = (customer) => { setFormData({ name: customer.name, company: customer.company || "", phone: customer.phone, email: customer.email || "", address: customer.address, city: customer.city, discount_percent: customer.discount_percent || 0 }); setEditingCustomer(customer); setShowForm(true); };
   
-  const filteredCustomers = customers.filter(
-    (c) =>
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.phone.includes(searchTerm)
-  );
+  const filteredCustomers = customers.filter((c) => c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.city.toLowerCase().includes(searchTerm.toLowerCase()) || c.phone.includes(searchTerm));
   
   return (
     <div className="space-y-6" data-testid="customers">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold text-gray-800">Klientët</h1>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          data-testid="add-customer-btn"
-        >
-          <PlusIcon /> Shto Klient
-        </button>
+        <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><PlusIcon /> Shto Klient</button>
       </div>
       
-      {/* Search */}
-      <div className="relative">
-        <input
-          type="text"
-          placeholder="Kërko klient..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          data-testid="search-customers"
-        />
-      </div>
+      <input type="text" placeholder="Kërko klient..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg"/>
       
-      {/* Customer Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center p-4 border-b">
-              <h2 className="text-lg font-semibold">
-                {editingCustomer ? "Ndrysho Klientin" : "Klient i Ri"}
-              </h2>
-              <button onClick={resetForm} className="text-gray-500 hover:text-gray-700">
-                <XIcon />
-              </button>
+              <h2 className="text-lg font-semibold">{editingCustomer ? "Ndrysho Klientin" : "Klient i Ri"}</h2>
+              <button onClick={resetForm} className="text-gray-500"><XIcon /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Emri *</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  data-testid="customer-name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Kompania</label>
-                <input
-                  type="text"
-                  value={formData.company}
-                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  data-testid="customer-company"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Telefoni *</label>
-                <input
-                  type="tel"
-                  required
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  data-testid="customer-phone"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  data-testid="customer-email"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Adresa *</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  data-testid="customer-address"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Qyteti *</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  data-testid="customer-city"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Zbritja (%)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.discount_percent}
-                  onChange={(e) => setFormData({ ...formData, discount_percent: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  data-testid="customer-discount"
-                />
-              </div>
-              <div className="flex gap-2 pt-4">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                >
-                  Anulo
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  data-testid="save-customer-btn"
-                >
-                  {editingCustomer ? "Ruaj Ndryshimet" : "Shto Klientin"}
-                </button>
-              </div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Emri *</label><input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg"/></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Kompania</label><input type="text" value={formData.company} onChange={(e) => setFormData({ ...formData, company: e.target.value })} className="w-full px-3 py-2 border rounded-lg"/></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Telefoni *</label><input type="tel" required value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="w-full px-3 py-2 border rounded-lg"/></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Email</label><input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-3 py-2 border rounded-lg"/></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Adresa *</label><input type="text" required value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} className="w-full px-3 py-2 border rounded-lg"/></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Qyteti *</label><input type="text" required value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} className="w-full px-3 py-2 border rounded-lg"/></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Zbritja (%)</label><input type="number" min="0" max="100" value={formData.discount_percent} onChange={(e) => setFormData({ ...formData, discount_percent: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border rounded-lg"/></div>
+              <div className="flex gap-2 pt-4"><button type="button" onClick={resetForm} className="flex-1 px-4 py-2 border rounded-lg">Anulo</button><button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg">{editingCustomer ? "Ruaj" : "Shto"}</button></div>
             </form>
           </div>
         </div>
       )}
       
-      {/* Customers List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredCustomers.map((customer) => (
-          <div key={customer.id} className="bg-white rounded-xl shadow-md p-4" data-testid={`customer-${customer.id}`}>
+          <div key={customer.id} className="bg-white rounded-xl shadow-md p-4">
             <div className="flex justify-between items-start mb-2">
-              <div>
-                <h3 className="font-semibold text-gray-800">{customer.name}</h3>
-                {customer.company && <p className="text-sm text-gray-500">{customer.company}</p>}
-              </div>
+              <div><h3 className="font-semibold text-gray-800">{customer.name}</h3>{customer.company && <p className="text-sm text-gray-500">{customer.company}</p>}</div>
               <div className="flex gap-1">
-                <button
-                  onClick={() => startEdit(customer)}
-                  className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                  data-testid={`edit-customer-${customer.id}`}
-                >
-                  <EditIcon />
-                </button>
-                <button
-                  onClick={() => onDelete(customer.id)}
-                  className="p-1 text-red-600 hover:bg-red-50 rounded"
-                  data-testid={`delete-customer-${customer.id}`}
-                >
-                  <TrashIcon />
-                </button>
+                <button onClick={() => startEdit(customer)} className="p-1 text-blue-600 hover:bg-blue-50 rounded"><EditIcon /></button>
+                <button onClick={() => onDelete(customer.id)} className="p-1 text-red-600 hover:bg-red-50 rounded"><TrashIcon /></button>
               </div>
             </div>
             <div className="text-sm text-gray-600 space-y-1">
               <p>📞 {customer.phone}</p>
               {customer.email && <p>📧 {customer.email}</p>}
               <p>📍 {customer.address}, {customer.city}</p>
-              {customer.discount_percent > 0 && (
-                <p className="text-green-600">Zbritja: {customer.discount_percent}%</p>
-              )}
+              {customer.discount_percent > 0 && <p className="text-green-600">Zbritja: {customer.discount_percent}%</p>}
             </div>
           </div>
         ))}
       </div>
-      
-      {filteredCustomers.length === 0 && (
-        <div className="text-center py-12 text-gray-500">
-          <UsersIcon />
-          <p className="mt-2">Nuk ka klientë të gjetur</p>
-        </div>
-      )}
+      {filteredCustomers.length === 0 && <div className="text-center py-12 text-gray-500"><p>Nuk ka klientë</p></div>}
     </div>
   );
 };
 
-// Offers Component  
-const Offers = ({
-  offers,
-  customers,
-  windowTypes,
-  doorTypes,
-  profiles,
-  glassTypes,
-  colors,
-  hardware,
-  onAdd,
-  onDelete,
-  onUpdateStatus,
-  onDownloadPdf,
-  initialAction,
-}) => {
+// Simplified Offers Component with Visual Product Selection
+const Offers = ({ offers, customers, windowTypes, doorTypes, profiles, glassTypes, colors, hardware, onAdd, onDelete, onUpdateStatus, onDownloadPdf, initialAction }) => {
   const [showForm, setShowForm] = useState(initialAction === "new");
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [items, setItems] = useState([]);
@@ -1020,400 +1307,144 @@ const Offers = ({
   const [filterStatus, setFilterStatus] = useState("all");
   const [viewOffer, setViewOffer] = useState(null);
   
-  const resetForm = () => {
-    setSelectedCustomerId("");
-    setItems([]);
-    setDiscountPercent(0);
-    setVatPercent(18);
-    setNotes("");
-    setValidDays(30);
-    setShowForm(false);
-  };
+  const resetForm = () => { setSelectedCustomerId(""); setItems([]); setDiscountPercent(0); setVatPercent(18); setNotes(""); setValidDays(30); setShowForm(false); };
   
-  const addItem = () => {
-    setItems([
-      ...items,
-      {
-        id: Date.now(),
-        product_type: "window",
-        product_type_id: windowTypes[0]?.id || "",
-        width_cm: 100,
-        height_cm: 120,
-        quantity: 1,
-        profile_id: profiles[0]?.id || "",
-        glass_id: glassTypes[0]?.id || "",
-        color_id: colors[0]?.id || "",
-        hardware_id: "",
-        notes: "",
-      },
-    ]);
-  };
+  const addItem = () => { setItems([...items, { id: Date.now(), product_type: "window", product_type_id: windowTypes[0]?.id || "", width_cm: 100, height_cm: 120, quantity: 1, profile_id: profiles[0]?.id || "", glass_id: glassTypes[0]?.id || "", color_id: colors[0]?.id || "", hardware_id: "", notes: "" }]); };
   
-  const updateItem = (index, field, value) => {
-    const newItems = [...items];
-    newItems[index][field] = value;
-    
-    // Reset product_type_id when switching between window and door
-    if (field === "product_type") {
-      newItems[index].product_type_id = value === "window" ? (windowTypes[0]?.id || "") : (doorTypes[0]?.id || "");
-    }
-    
-    setItems(newItems);
-  };
+  const updateItem = (index, field, value) => { const newItems = [...items]; newItems[index][field] = value; if (field === "product_type") { newItems[index].product_type_id = value === "window" ? (windowTypes[0]?.id || "") : (doorTypes[0]?.id || ""); } setItems(newItems); };
   
-  const removeItem = (index) => {
-    setItems(items.filter((_, i) => i !== index));
-  };
+  const removeItem = (index) => { setItems(items.filter((_, i) => i !== index)); };
   
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedCustomerId || items.length === 0) {
-      alert("Ju lutem zgjidhni klientin dhe shtoni së paku një produkt!");
-      return;
-    }
-    
-    await onAdd({
-      customer_id: selectedCustomerId,
-      items: items.map((item) => ({
-        product_type: item.product_type,
-        product_type_id: item.product_type_id,
-        width_cm: parseFloat(item.width_cm),
-        height_cm: parseFloat(item.height_cm),
-        quantity: parseInt(item.quantity),
-        profile_id: item.profile_id,
-        glass_id: item.glass_id,
-        color_id: item.color_id,
-        hardware_id: item.hardware_id || null,
-        notes: item.notes || null,
-      })),
-      discount_percent: parseFloat(discountPercent),
-      vat_percent: parseFloat(vatPercent),
-      notes: notes || null,
-      valid_days: parseInt(validDays),
-    });
-    
-    resetForm();
-  };
+  const handleSubmit = async (e) => { e.preventDefault(); if (!selectedCustomerId || items.length === 0) { alert("Zgjidhni klientin dhe shtoni produkte!"); return; } await onAdd({ customer_id: selectedCustomerId, items: items.map((item) => ({ product_type: item.product_type, product_type_id: item.product_type_id, width_cm: parseFloat(item.width_cm), height_cm: parseFloat(item.height_cm), quantity: parseInt(item.quantity), profile_id: item.profile_id, glass_id: item.glass_id, color_id: item.color_id, hardware_id: item.hardware_id || null, notes: item.notes || null })), discount_percent: parseFloat(discountPercent), vat_percent: parseFloat(vatPercent), notes: notes || null, valid_days: parseInt(validDays) }); resetForm(); };
   
-  const getStatusBadge = (status) => {
-    const styles = {
-      draft: "bg-gray-100 text-gray-800",
-      sent: "bg-blue-100 text-blue-800",
-      accepted: "bg-green-100 text-green-800",
-      rejected: "bg-red-100 text-red-800",
-    };
-    const labels = {
-      draft: "Draft",
-      sent: "Dërguar",
-      accepted: "Pranuar",
-      rejected: "Refuzuar",
-    };
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || styles.draft}`}>
-        {labels[status] || status}
-      </span>
-    );
-  };
+  const getStatusBadge = (status) => { const styles = { draft: "bg-gray-100 text-gray-800", sent: "bg-blue-100 text-blue-800", accepted: "bg-green-100 text-green-800", rejected: "bg-red-100 text-red-800" }; const labels = { draft: "Draft", sent: "Dërguar", accepted: "Pranuar", rejected: "Refuzuar" }; return <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || styles.draft}`}>{labels[status] || status}</span>; };
   
-  const filteredOffers = offers.filter(
-    (o) => filterStatus === "all" || o.status === filterStatus
-  );
+  const filteredOffers = offers.filter((o) => filterStatus === "all" || o.status === filterStatus);
   
+  const getProductById = (type, id) => { if (type === "window") return windowTypes.find(w => w.id === id); return doorTypes.find(d => d.id === id); };
+
   return (
     <div className="space-y-6" data-testid="offers">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold text-gray-800">Ofertat</h1>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          data-testid="new-offer-btn"
-        >
-          <PlusIcon /> Ofertë e Re
-        </button>
+        <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><PlusIcon /> Ofertë e Re</button>
       </div>
       
-      {/* Filter */}
       <div className="flex flex-wrap gap-2">
         {["all", "draft", "sent", "accepted", "rejected"].map((status) => (
-          <button
-            key={status}
-            onClick={() => setFilterStatus(status)}
-            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-              filterStatus === status
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-            data-testid={`filter-${status}`}
-          >
+          <button key={status} onClick={() => setFilterStatus(status)} className={`px-3 py-1 rounded-full text-sm font-medium ${filterStatus === status ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
             {status === "all" ? "Të gjitha" : status === "draft" ? "Draft" : status === "sent" ? "Dërguar" : status === "accepted" ? "Pranuar" : "Refuzuar"}
           </button>
         ))}
       </div>
       
-      {/* New Offer Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[95vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl max-w-5xl w-full max-h-[95vh] overflow-y-auto">
             <div className="sticky top-0 bg-white flex justify-between items-center p-4 border-b z-10">
               <h2 className="text-lg font-semibold">Ofertë e Re</h2>
-              <button onClick={resetForm} className="text-gray-500 hover:text-gray-700">
-                <XIcon />
-              </button>
+              <button onClick={resetForm} className="text-gray-500"><XIcon /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-4 space-y-6">
-              {/* Customer Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Klienti *</label>
-                <select
-                  required
-                  value={selectedCustomerId}
-                  onChange={(e) => setSelectedCustomerId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  data-testid="offer-customer-select"
-                >
+                <select required value={selectedCustomerId} onChange={(e) => setSelectedCustomerId(e.target.value)} className="w-full px-3 py-2 border rounded-lg">
                   <option value="">Zgjidh klientin...</option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} - {c.city}
-                    </option>
-                  ))}
+                  {customers.map((c) => <option key={c.id} value={c.id}>{c.name} - {c.city}</option>)}
                 </select>
               </div>
               
-              {/* Items */}
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="block text-sm font-medium text-gray-700">Produktet</label>
-                  <button
-                    type="button"
-                    onClick={addItem}
-                    className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700"
-                    data-testid="add-item-btn"
-                  >
-                    <PlusIcon /> Shto Produkt
-                  </button>
+                  <button type="button" onClick={addItem} className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700"><PlusIcon /> Shto</button>
                 </div>
                 
-                {items.length === 0 && (
-                  <div className="text-center py-8 bg-gray-50 rounded-lg text-gray-500">
-                    Klikoni "Shto Produkt" për të shtuar dritare ose dyer
-                  </div>
-                )}
+                {items.length === 0 && <div className="text-center py-8 bg-gray-50 rounded-lg text-gray-500">Klikoni "Shto" për të shtuar dritare ose dyer</div>}
                 
-                {items.map((item, index) => (
-                  <div key={item.id} className="bg-gray-50 rounded-lg p-4 mb-4" data-testid={`offer-item-${index}`}>
-                    <div className="flex justify-between items-start mb-3">
-                      <span className="font-medium text-gray-700">Produkti #{index + 1}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeItem(index)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <TrashIcon />
-                      </button>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {/* Product Type */}
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Lloji</label>
-                        <select
-                          value={item.product_type}
-                          onChange={(e) => updateItem(index, "product_type", e.target.value)}
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                        >
-                          <option value="window">Dritare</option>
-                          <option value="door">Derë</option>
-                        </select>
-                      </div>
-                      
-                      {/* Product */}
-                      <div className="col-span-1">
-                        <label className="block text-xs text-gray-500 mb-1">Produkti</label>
-                        <select
-                          value={item.product_type_id}
-                          onChange={(e) => updateItem(index, "product_type_id", e.target.value)}
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                        >
-                          {(item.product_type === "window" ? windowTypes : doorTypes).map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      
-                      {/* Width */}
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Gjerësia (cm)</label>
-                        <input
-                          type="number"
-                          min="10"
-                          value={item.width_cm}
-                          onChange={(e) => updateItem(index, "width_cm", e.target.value)}
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      
-                      {/* Height */}
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Lartësia (cm)</label>
-                        <input
-                          type="number"
-                          min="10"
-                          value={item.height_cm}
-                          onChange={(e) => updateItem(index, "height_cm", e.target.value)}
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      
-                      {/* Quantity */}
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Sasia</label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={item.quantity}
-                          onChange={(e) => updateItem(index, "quantity", e.target.value)}
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                        />
-                      </div>
-                      
-                      {/* Profile */}
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Profili</label>
-                        <select
-                          value={item.profile_id}
-                          onChange={(e) => updateItem(index, "profile_id", e.target.value)}
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                        >
-                          {profiles.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      
-                      {/* Glass */}
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Xhami</label>
-                        <select
-                          value={item.glass_id}
-                          onChange={(e) => updateItem(index, "glass_id", e.target.value)}
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                        >
-                          {glassTypes.map((g) => (
-                            <option key={g.id} value={g.id}>
-                              {g.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      
-                      {/* Color */}
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Ngjyra</label>
-                        <select
-                          value={item.color_id}
-                          onChange={(e) => updateItem(index, "color_id", e.target.value)}
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                        >
-                          {colors.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      
-                      {/* Hardware */}
-                      <div className="col-span-2">
-                        <label className="block text-xs text-gray-500 mb-1">Mekanizmi (opsional)</label>
-                        <select
-                          value={item.hardware_id}
-                          onChange={(e) => updateItem(index, "hardware_id", e.target.value)}
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                        >
-                          <option value="">Pa mekanizëm</option>
-                          {hardware.map((h) => (
-                            <option key={h.id} value={h.id}>
-                              {h.name} ({h.price}€)
-                            </option>
-                          ))}
-                        </select>
+                {items.map((item, index) => {
+                  const selectedProduct = getProductById(item.product_type, item.product_type_id);
+                  return (
+                    <div key={item.id} className="bg-gray-50 rounded-lg p-4 mb-4">
+                      <div className="flex gap-4">
+                        {/* Product Visual */}
+                        <div className="flex-shrink-0">
+                          {item.product_type === "window" ? (
+                            <WindowVisual type={selectedProduct} width={100} height={80} />
+                          ) : (
+                            <DoorVisual type={selectedProduct} width={60} height={90} />
+                          )}
+                        </div>
+                        
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="font-medium text-gray-700">Produkti #{index + 1}</span>
+                            <button type="button" onClick={() => removeItem(index)} className="text-red-600"><TrashIcon /></button>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Lloji</label>
+                              <select value={item.product_type} onChange={(e) => updateItem(index, "product_type", e.target.value)} className="w-full px-2 py-1 border rounded text-sm">
+                                <option value="window">Dritare</option>
+                                <option value="door">Derë</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Produkti</label>
+                              <select value={item.product_type_id} onChange={(e) => updateItem(index, "product_type_id", e.target.value)} className="w-full px-2 py-1 border rounded text-sm">
+                                {(item.product_type === "window" ? windowTypes : doorTypes).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Gjerësia (cm)</label>
+                              <input type="number" min="10" value={item.width_cm} onChange={(e) => updateItem(index, "width_cm", e.target.value)} className="w-full px-2 py-1 border rounded text-sm"/>
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Lartësia (cm)</label>
+                              <input type="number" min="10" value={item.height_cm} onChange={(e) => updateItem(index, "height_cm", e.target.value)} className="w-full px-2 py-1 border rounded text-sm"/>
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Sasia</label>
+                              <input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(index, "quantity", e.target.value)} className="w-full px-2 py-1 border rounded text-sm"/>
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Profili</label>
+                              <select value={item.profile_id} onChange={(e) => updateItem(index, "profile_id", e.target.value)} className="w-full px-2 py-1 border rounded text-sm">
+                                {profiles.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Xhami</label>
+                              <select value={item.glass_id} onChange={(e) => updateItem(index, "glass_id", e.target.value)} className="w-full px-2 py-1 border rounded text-sm">
+                                {glassTypes.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Ngjyra</label>
+                              <select value={item.color_id} onChange={(e) => updateItem(index, "color_id", e.target.value)} className="w-full px-2 py-1 border rounded text-sm">
+                                {colors.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                              </select>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               
-              {/* Additional Options */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Zbritja (%)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={discountPercent}
-                    onChange={(e) => setDiscountPercent(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    data-testid="offer-discount"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">TVSH (%)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={vatPercent}
-                    onChange={(e) => setVatPercent(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    data-testid="offer-vat"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Vlefshmeri (ditë)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={validDays}
-                    onChange={(e) => setValidDays(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    data-testid="offer-valid-days"
-                  />
-                </div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Zbritja (%)</label><input type="number" min="0" max="100" value={discountPercent} onChange={(e) => setDiscountPercent(e.target.value)} className="w-full px-3 py-2 border rounded-lg"/></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">TVSH (%)</label><input type="number" min="0" max="100" value={vatPercent} onChange={(e) => setVatPercent(e.target.value)} className="w-full px-3 py-2 border rounded-lg"/></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Vlefshmëri (ditë)</label><input type="number" min="1" value={validDays} onChange={(e) => setValidDays(e.target.value)} className="w-full px-3 py-2 border rounded-lg"/></div>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Shënime</label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  placeholder="Shënime shtesë për klientin..."
-                  data-testid="offer-notes"
-                />
-              </div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Shënime</label><textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="w-full px-3 py-2 border rounded-lg" placeholder="Shënime shtesë..."/></div>
               
               <div className="flex gap-2 pt-4 border-t">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                >
-                  Anulo
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  data-testid="create-offer-btn"
-                >
-                  Krijo Ofertën
-                </button>
+                <button type="button" onClick={resetForm} className="flex-1 px-4 py-2 border rounded-lg">Anulo</button>
+                <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg">Krijo Ofertën</button>
               </div>
             </form>
           </div>
@@ -1426,118 +1457,34 @@ const Offers = ({
           <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[95vh] overflow-y-auto">
             <div className="sticky top-0 bg-white flex justify-between items-center p-4 border-b z-10">
               <h2 className="text-lg font-semibold">Oferta #{viewOffer.offer_number}</h2>
-              <button onClick={() => setViewOffer(null)} className="text-gray-500 hover:text-gray-700">
-                <XIcon />
-              </button>
+              <button onClick={() => setViewOffer(null)} className="text-gray-500"><XIcon /></button>
             </div>
             <div className="p-6">
-              {/* Offer Header */}
               <div className="grid grid-cols-2 gap-4 mb-6">
-                <div>
-                  <p className="text-sm text-gray-500">Klienti</p>
-                  <p className="font-semibold">{viewOffer.customer_name}</p>
-                  <p className="text-sm">{viewOffer.customer_address}, {viewOffer.customer_city}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-500">Data</p>
-                  <p className="font-semibold">{new Date(viewOffer.created_at).toLocaleDateString("sq-AL")}</p>
-                  <div className="mt-1">{getStatusBadge(viewOffer.status)}</div>
-                </div>
+                <div><p className="text-sm text-gray-500">Klienti</p><p className="font-semibold">{viewOffer.customer_name}</p><p className="text-sm">{viewOffer.customer_address}, {viewOffer.customer_city}</p></div>
+                <div className="text-right"><p className="text-sm text-gray-500">Data</p><p className="font-semibold">{new Date(viewOffer.created_at).toLocaleDateString("sq-AL")}</p><div className="mt-1">{getStatusBadge(viewOffer.status)}</div></div>
               </div>
               
-              {/* Items Table */}
               <div className="overflow-x-auto mb-6">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="px-3 py-2 text-left">Produkti</th>
-                      <th className="px-3 py-2 text-left">Dimensionet</th>
-                      <th className="px-3 py-2 text-left">Profili</th>
-                      <th className="px-3 py-2 text-center">Sasia</th>
-                      <th className="px-3 py-2 text-right">Çmimi</th>
-                      <th className="px-3 py-2 text-right">Totali</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {viewOffer.items.map((item, i) => (
-                      <tr key={i} className="border-b">
-                        <td className="px-3 py-2">{item.product_name}</td>
-                        <td className="px-3 py-2">{item.width_cm}x{item.height_cm} cm</td>
-                        <td className="px-3 py-2">{item.profile_name}</td>
-                        <td className="px-3 py-2 text-center">{item.quantity}</td>
-                        <td className="px-3 py-2 text-right">{item.unit_price.toFixed(2)}€</td>
-                        <td className="px-3 py-2 text-right font-medium">{item.total_price.toFixed(2)}€</td>
-                      </tr>
-                    ))}
-                  </tbody>
+                  <thead className="bg-gray-100"><tr><th className="px-3 py-2 text-left">Produkti</th><th className="px-3 py-2 text-left">Dimensionet</th><th className="px-3 py-2 text-center">Sasia</th><th className="px-3 py-2 text-right">Çmimi</th><th className="px-3 py-2 text-right">Totali</th></tr></thead>
+                  <tbody>{viewOffer.items.map((item, i) => (<tr key={i} className="border-b"><td className="px-3 py-2">{item.product_name}</td><td className="px-3 py-2">{item.width_cm}x{item.height_cm} cm</td><td className="px-3 py-2 text-center">{item.quantity}</td><td className="px-3 py-2 text-right">{item.unit_price.toFixed(2)}€</td><td className="px-3 py-2 text-right font-medium">{item.total_price.toFixed(2)}€</td></tr>))}</tbody>
                 </table>
               </div>
               
-              {/* Totals */}
               <div className="flex justify-end">
                 <div className="w-64 space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Nëntotali:</span>
-                    <span>{viewOffer.subtotal.toFixed(2)}€</span>
-                  </div>
-                  <div className="flex justify-between text-green-600">
-                    <span>Zbritja ({viewOffer.discount_percent}%):</span>
-                    <span>-{viewOffer.discount_amount.toFixed(2)}€</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">TVSH ({viewOffer.vat_percent}%):</span>
-                    <span>{viewOffer.vat_amount.toFixed(2)}€</span>
-                  </div>
-                  <div className="flex justify-between text-lg font-bold border-t pt-2">
-                    <span>TOTALI:</span>
-                    <span className="text-blue-600">{viewOffer.total.toFixed(2)}€</span>
-                  </div>
+                  <div className="flex justify-between"><span className="text-gray-600">Nëntotali:</span><span>{viewOffer.subtotal.toFixed(2)}€</span></div>
+                  <div className="flex justify-between text-green-600"><span>Zbritja ({viewOffer.discount_percent}%):</span><span>-{viewOffer.discount_amount.toFixed(2)}€</span></div>
+                  <div className="flex justify-between"><span className="text-gray-600">TVSH ({viewOffer.vat_percent}%):</span><span>{viewOffer.vat_amount.toFixed(2)}€</span></div>
+                  <div className="flex justify-between text-lg font-bold border-t pt-2"><span>TOTALI:</span><span className="text-blue-600">{viewOffer.total.toFixed(2)}€</span></div>
                 </div>
               </div>
               
-              {viewOffer.notes && (
-                <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
-                  <p className="text-sm font-medium text-yellow-800">Shënime:</p>
-                  <p className="text-sm text-yellow-700">{viewOffer.notes}</p>
-                </div>
-              )}
-              
-              <p className="text-sm text-gray-500 mt-4">
-                Oferta është e vlefshme për {viewOffer.valid_days} ditë nga data e krijimit.
-              </p>
-              
-              {/* Actions */}
               <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t">
-                <button
-                  onClick={() => { onDownloadPdf(viewOffer.id); }}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  <DownloadIcon /> Shkarko PDF
-                </button>
-                {viewOffer.status === "draft" && (
-                  <button
-                    onClick={() => { onUpdateStatus(viewOffer.id, "sent"); setViewOffer({ ...viewOffer, status: "sent" }); }}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                  >
-                    Shëno si Dërguar
-                  </button>
-                )}
-                {viewOffer.status === "sent" && (
-                  <>
-                    <button
-                      onClick={() => { onUpdateStatus(viewOffer.id, "accepted"); setViewOffer({ ...viewOffer, status: "accepted" }); }}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                    >
-                      Pranuar
-                    </button>
-                    <button
-                      onClick={() => { onUpdateStatus(viewOffer.id, "rejected"); setViewOffer({ ...viewOffer, status: "rejected" }); }}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                    >
-                      Refuzuar
-                    </button>
-                  </>
-                )}
+                <button onClick={() => onDownloadPdf(viewOffer.id)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg"><DownloadIcon /> PDF</button>
+                {viewOffer.status === "draft" && <button onClick={() => { onUpdateStatus(viewOffer.id, "sent"); setViewOffer({...viewOffer, status: "sent"}); }} className="px-4 py-2 bg-indigo-600 text-white rounded-lg">Dërguar</button>}
+                {viewOffer.status === "sent" && (<><button onClick={() => { onUpdateStatus(viewOffer.id, "accepted"); setViewOffer({...viewOffer, status: "accepted"}); }} className="px-4 py-2 bg-green-600 text-white rounded-lg">Pranuar</button><button onClick={() => { onUpdateStatus(viewOffer.id, "rejected"); setViewOffer({...viewOffer, status: "rejected"}); }} className="px-4 py-2 bg-red-600 text-white rounded-lg">Refuzuar</button></>)}
               </div>
             </div>
           </div>
@@ -1547,70 +1494,34 @@ const Offers = ({
       {/* Offers List */}
       <div className="space-y-4">
         {filteredOffers.map((offer) => (
-          <div key={offer.id} className="bg-white rounded-xl shadow-md p-4" data-testid={`offer-${offer.id}`}>
+          <div key={offer.id} className="bg-white rounded-xl shadow-md p-4">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-lg font-bold text-gray-800">Oferta #{offer.offer_number}</span>
-                  {getStatusBadge(offer.status)}
-                </div>
+                <div className="flex items-center gap-3 mb-2"><span className="text-lg font-bold text-gray-800">Oferta #{offer.offer_number}</span>{getStatusBadge(offer.status)}</div>
                 <p className="text-gray-600">{offer.customer_name} - {offer.customer_city}</p>
-                <p className="text-sm text-gray-500">
-                  {new Date(offer.created_at).toLocaleDateString("sq-AL")} • {offer.items.length} produkte
-                </p>
+                <p className="text-sm text-gray-500">{new Date(offer.created_at).toLocaleDateString("sq-AL")} • {offer.items.length} produkte</p>
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-blue-600">{offer.total.toFixed(2)}€</p>
-              </div>
+              <div className="text-right"><p className="text-2xl font-bold text-blue-600">{offer.total.toFixed(2)}€</p></div>
               <div className="flex gap-2">
-                <button
-                  onClick={() => setViewOffer(offer)}
-                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
-                  title="Shiko"
-                  data-testid={`view-offer-${offer.id}`}
-                >
-                  <EyeIcon />
-                </button>
-                <button
-                  onClick={() => onDownloadPdf(offer.id)}
-                  className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
-                  title="Shkarko PDF"
-                  data-testid={`download-offer-${offer.id}`}
-                >
-                  <DownloadIcon />
-                </button>
-                <button
-                  onClick={() => onDelete(offer.id)}
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                  title="Fshi"
-                  data-testid={`delete-offer-${offer.id}`}
-                >
-                  <TrashIcon />
-                </button>
+                <button onClick={() => setViewOffer(offer)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><EyeIcon /></button>
+                <button onClick={() => onDownloadPdf(offer.id)} className="p-2 text-green-600 hover:bg-green-50 rounded-lg"><DownloadIcon /></button>
+                <button onClick={() => onDelete(offer.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg"><TrashIcon /></button>
               </div>
             </div>
           </div>
         ))}
       </div>
-      
-      {filteredOffers.length === 0 && (
-        <div className="text-center py-12 text-gray-500">
-          <FileTextIcon />
-          <p className="mt-2">Nuk ka oferta të gjetur</p>
-        </div>
-      )}
+      {filteredOffers.length === 0 && <div className="text-center py-12 text-gray-500"><p>Nuk ka oferta</p></div>}
     </div>
   );
 };
 
-// Main App Content (for authenticated users)
+// Main App Content
 const AppContent = ({ user, api, onLogout }) => {
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [pageParams, setPageParams] = useState({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  
-  // Data states
   const [stats, setStats] = useState(null);
   const [customers, setCustomers] = useState([]);
   const [offers, setOffers] = useState([]);
@@ -1621,328 +1532,107 @@ const AppContent = ({ user, api, onLogout }) => {
   const [colors, setColors] = useState([]);
   const [hardware, setHardware] = useState([]);
   
-  // Load all data
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [statsRes, customersRes, offersRes, windowsRes, doorsRes, profilesRes, glassRes, colorsRes, hardwareRes] = await Promise.all([
-        api.get("/dashboard/stats"),
-        api.get("/customers"),
-        api.get("/offers"),
-        api.get("/window-types"),
-        api.get("/door-types"),
-        api.get("/profiles"),
-        api.get("/glass-types"),
-        api.get("/colors"),
-        api.get("/hardware"),
+        api.get("/dashboard/stats"), api.get("/customers"), api.get("/offers"), api.get("/window-types"), api.get("/door-types"), api.get("/profiles"), api.get("/glass-types"), api.get("/colors"), api.get("/hardware")
       ]);
-      
-      setStats(statsRes.data);
-      setCustomers(customersRes.data);
-      setOffers(offersRes.data);
-      setWindowTypes(windowsRes.data);
-      setDoorTypes(doorsRes.data);
-      setProfiles(profilesRes.data);
-      setGlassTypes(glassRes.data);
-      setColors(colorsRes.data);
-      setHardware(hardwareRes.data);
-    } catch (error) {
-      console.error("Error loading data:", error);
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        onLogout();
-      }
-    } finally {
-      setLoading(false);
-    }
+      setStats(statsRes.data); setCustomers(customersRes.data); setOffers(offersRes.data); setWindowTypes(windowsRes.data); setDoorTypes(doorsRes.data); setProfiles(profilesRes.data); setGlassTypes(glassRes.data); setColors(colorsRes.data); setHardware(hardwareRes.data);
+    } catch (error) { console.error("Error:", error); if (error.response?.status === 401 || error.response?.status === 403) onLogout(); } finally { setLoading(false); }
   }, [api, onLogout]);
   
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  useEffect(() => { loadData(); }, [loadData]);
   
-  // Customer handlers
-  const handleAddCustomer = async (data) => {
-    try {
-      await api.post("/customers", data);
-      loadData();
-    } catch (error) {
-      console.error("Error adding customer:", error);
-      alert("Gabim gjatë shtimit të klientit!");
-    }
-  };
+  const handleAddCustomer = async (data) => { try { await api.post("/customers", data); loadData(); } catch (error) { alert("Gabim!"); } };
+  const handleEditCustomer = async (id, data) => { try { await api.put(`/customers/${id}`, data); loadData(); } catch (error) { alert("Gabim!"); } };
+  const handleDeleteCustomer = async (id) => { if (!window.confirm("Fshi klientin?")) return; try { await api.delete(`/customers/${id}`); loadData(); } catch (error) { alert("Gabim!"); } };
+  const handleAddOffer = async (data) => { try { await api.post("/offers", data); loadData(); } catch (error) { alert("Gabim!"); } };
+  const handleDeleteOffer = async (id) => { if (!window.confirm("Fshi ofertën?")) return; try { await api.delete(`/offers/${id}`); loadData(); } catch (error) { alert("Gabim!"); } };
+  const handleUpdateOfferStatus = async (id, status) => { try { await api.put(`/offers/${id}`, { status }); loadData(); } catch (error) { alert("Gabim!"); } };
+  const handleDownloadPdf = async (id) => { try { const response = await api.get(`/offers/${id}/pdf`, { responseType: "blob" }); const url = window.URL.createObjectURL(new Blob([response.data])); const link = document.createElement("a"); link.href = url; link.setAttribute("download", `Oferta_${id}.pdf`); document.body.appendChild(link); link.click(); link.remove(); } catch (error) { alert("Gabim!"); } };
   
-  const handleEditCustomer = async (id, data) => {
-    try {
-      await api.put(`/customers/${id}`, data);
-      loadData();
-    } catch (error) {
-      console.error("Error updating customer:", error);
-      alert("Gabim gjatë përditimit të klientit!");
-    }
-  };
-  
-  const handleDeleteCustomer = async (id) => {
-    if (!window.confirm("Jeni i sigurt që dëshironi të fshini këtë klient?")) return;
-    try {
-      await api.delete(`/customers/${id}`);
-      loadData();
-    } catch (error) {
-      console.error("Error deleting customer:", error);
-      alert("Gabim gjatë fshirjes së klientit!");
-    }
-  };
-  
-  // Offer handlers
-  const handleAddOffer = async (data) => {
-    try {
-      await api.post("/offers", data);
-      loadData();
-    } catch (error) {
-      console.error("Error adding offer:", error);
-      alert("Gabim gjatë krijimit të ofertës!");
-    }
-  };
-  
-  const handleDeleteOffer = async (id) => {
-    if (!window.confirm("Jeni i sigurt që dëshironi të fshini këtë ofertë?")) return;
-    try {
-      await api.delete(`/offers/${id}`);
-      loadData();
-    } catch (error) {
-      console.error("Error deleting offer:", error);
-      alert("Gabim gjatë fshirjes së ofertës!");
-    }
-  };
-  
-  const handleUpdateOfferStatus = async (id, status) => {
-    try {
-      await api.put(`/offers/${id}`, { status });
-      loadData();
-    } catch (error) {
-      console.error("Error updating offer status:", error);
-      alert("Gabim gjatë përditimit të statusit!");
-    }
-  };
-  
-  const handleDownloadPdf = async (id) => {
-    try {
-      const response = await api.get(`/offers/${id}/pdf`, {
-        responseType: "blob",
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `Oferta_${id}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (error) {
-      console.error("Error downloading PDF:", error);
-      alert("Gabim gjatë shkarkimit të PDF!");
-    }
-  };
-  
-  const navigate = (page, params = {}) => {
-    setCurrentPage(page);
-    setPageParams(params);
-    setSidebarOpen(false);
-  };
+  const navigate = (page, params = {}) => { setCurrentPage(page); setPageParams(params); setSidebarOpen(false); };
   
   const navItems = [
     { id: "dashboard", label: "Paneli", icon: <HomeIcon /> },
+    { id: "products", label: "Produktet", icon: <PackageIcon /> },
     { id: "catalog", label: "Katalogu", icon: <WindowIcon /> },
     { id: "customers", label: "Klientët", icon: <UsersIcon /> },
     { id: "offers", label: "Ofertat", icon: <FileTextIcon /> },
   ];
   
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Duke ngarkuar...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div className="min-h-screen bg-gray-100 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
   
   return (
-    <div className="min-h-screen bg-gray-100" data-testid="app">
-      {/* Mobile Header */}
+    <div className="min-h-screen bg-gray-100">
       <div className="lg:hidden fixed top-0 left-0 right-0 bg-white shadow-md z-40">
         <div className="flex items-center justify-between px-4 py-3">
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-gray-600">
-            <MenuIcon />
-          </button>
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-gray-600"><MenuIcon /></button>
           <h1 className="text-lg font-bold text-blue-800">PVC Oferta</h1>
           <div className="w-6"></div>
         </div>
       </div>
       
-      {/* Sidebar Overlay */}
-      {sidebarOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      {sidebarOpen && <div className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40" onClick={() => setSidebarOpen(false)}/>}
       
-      {/* Sidebar */}
-      <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-blue-900 to-blue-800 text-white transform transition-transform duration-300 z-50 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0`}
-      >
+      <aside className={`fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-blue-900 to-blue-800 text-white transform transition-transform duration-300 z-50 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}>
         <div className="p-6">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-blue-900">
-              <WindowIcon />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">PVC Oferta</h1>
-              <p className="text-xs text-blue-200">Sistemi i Ofertave</p>
-            </div>
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-blue-900"><WindowIcon /></div>
+            <div><h1 className="text-xl font-bold">PVC Oferta</h1><p className="text-xs text-blue-200">Sistemi i Ofertave</p></div>
           </div>
-          
-          {/* User Info */}
-          <div className="bg-blue-700 rounded-lg p-3 mb-6">
-            <p className="font-medium text-sm">{user.company_name}</p>
-            <p className="text-xs text-blue-200">{user.email}</p>
-          </div>
-          
+          <div className="bg-blue-700 rounded-lg p-3 mb-6"><p className="font-medium text-sm">{user.company_name}</p><p className="text-xs text-blue-200">{user.email}</p></div>
           <nav className="space-y-2">
             {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => navigate(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                  currentPage === item.id
-                    ? "bg-white text-blue-900"
-                    : "text-blue-100 hover:bg-blue-700"
-                }`}
-                data-testid={`nav-${item.id}`}
-              >
-                {item.icon}
-                {item.label}
+              <button key={item.id} onClick={() => navigate(item.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentPage === item.id ? "bg-white text-blue-900" : "text-blue-100 hover:bg-blue-700"}`}>
+                {item.icon} {item.label}
               </button>
             ))}
           </nav>
         </div>
-        
         <div className="absolute bottom-0 left-0 right-0 p-6">
-          <button
-            onClick={onLogout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-          >
+          <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
             <LogOutIcon /> Dilni
           </button>
         </div>
       </aside>
       
-      {/* Main Content */}
       <main className="lg:ml-64 pt-16 lg:pt-0">
         <div className="p-4 lg:p-8">
-          {currentPage === "dashboard" && (
-            <Dashboard stats={stats} onNavigate={navigate} />
-          )}
-          
-          {currentPage === "catalog" && (
-            <ProductCatalog
-              windowTypes={windowTypes}
-              doorTypes={doorTypes}
-              profiles={profiles}
-              glassTypes={glassTypes}
-              colors={colors}
-              hardware={hardware}
-            />
-          )}
-          
-          {currentPage === "customers" && (
-            <Customers
-              customers={customers}
-              onAdd={handleAddCustomer}
-              onEdit={handleEditCustomer}
-              onDelete={handleDeleteCustomer}
-              initialAction={pageParams.action}
-            />
-          )}
-          
-          {currentPage === "offers" && (
-            <Offers
-              offers={offers}
-              customers={customers}
-              windowTypes={windowTypes}
-              doorTypes={doorTypes}
-              profiles={profiles}
-              glassTypes={glassTypes}
-              colors={colors}
-              hardware={hardware}
-              onAdd={handleAddOffer}
-              onDelete={handleDeleteOffer}
-              onUpdateStatus={handleUpdateOfferStatus}
-              onDownloadPdf={handleDownloadPdf}
-              initialAction={pageParams.action}
-            />
-          )}
+          {currentPage === "dashboard" && <Dashboard stats={stats} onNavigate={navigate} />}
+          {currentPage === "products" && <ProductManagement api={api} windowTypes={windowTypes} doorTypes={doorTypes} profiles={profiles} glassTypes={glassTypes} colors={colors} hardware={hardware} onReload={loadData} />}
+          {currentPage === "catalog" && <ProductCatalog windowTypes={windowTypes} doorTypes={doorTypes} profiles={profiles} glassTypes={glassTypes} colors={colors} hardware={hardware} />}
+          {currentPage === "customers" && <Customers customers={customers} onAdd={handleAddCustomer} onEdit={handleEditCustomer} onDelete={handleDeleteCustomer} initialAction={pageParams.action} />}
+          {currentPage === "offers" && <Offers offers={offers} customers={customers} windowTypes={windowTypes} doorTypes={doorTypes} profiles={profiles} glassTypes={glassTypes} colors={colors} hardware={hardware} onAdd={handleAddOffer} onDelete={handleDeleteOffer} onUpdateStatus={handleUpdateOfferStatus} onDownloadPdf={handleDownloadPdf} initialAction={pageParams.action} />}
         </div>
       </main>
     </div>
   );
 };
 
-// Main App Component
+// Main App
 function App() {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored auth
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
-    
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
+    if (storedToken && storedUser) { setToken(storedToken); setUser(JSON.parse(storedUser)); }
     setLoading(false);
-    
-    // Seed database on first load
     axios.post(`${API}/seed`).catch(() => {});
   }, []);
 
-  const handleLogin = (userData, authToken) => {
-    setUser(userData);
-    setToken(authToken);
-  };
+  const handleLogin = (userData, authToken) => { setUser(userData); setToken(authToken); };
+  const handleLogout = () => { localStorage.removeItem("token"); localStorage.removeItem("user"); setUser(null); setToken(null); };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setUser(null);
-    setToken(null);
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (!user || !token) {
-    return <AuthPage onLogin={handleLogin} />;
-  }
+  if (loading) return <div className="min-h-screen bg-gray-100 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
+  if (!user || !token) return <AuthPage onLogin={handleLogin} />;
 
   const api = createAuthAxios(token);
-
-  // Admin users see admin panel
-  if (user.is_admin) {
-    return <AdminPanel api={api} onLogout={handleLogout} />;
-  }
-
-  // Regular users see the main app
+  if (user.is_admin) return <AdminPanel api={api} onLogout={handleLogout} />;
   return <AppContent user={user} api={api} onLogout={handleLogout} />;
 }
 
