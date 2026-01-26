@@ -582,22 +582,309 @@ async def get_status_checks():
 
 # ==================== PRODUCT CATALOG (Public) ====================
 
-@api_router.get("/window-types", response_model=List[WindowType])
-async def get_window_types():
-    windows = await db.window_types.find({}, {"_id": 0}).to_list(100)
+@api_router.get("/window-types")
+async def get_window_types(current_user: dict = Depends(get_current_user)):
+    # Get global windows and user's custom windows
+    windows = await db.window_types.find(
+        {"$or": [{"user_id": None}, {"user_id": {"$exists": False}}, {"user_id": current_user["id"]}]},
+        {"_id": 0}
+    ).to_list(100)
     return windows
 
-@api_router.get("/door-types", response_model=List[DoorType])
-async def get_door_types():
-    doors = await db.door_types.find({}, {"_id": 0}).to_list(100)
+@api_router.post("/window-types")
+async def create_window_type(input: WindowTypeCreate, current_user: dict = Depends(get_current_user)):
+    window = WindowType(
+        user_id=current_user["id"],
+        name=input.name,
+        code=input.code,
+        opening_type=input.opening_type,
+        panels=input.panels,
+        base_price_per_sqm=input.base_price_per_sqm,
+        description=input.description,
+        image_url=input.image_url,
+        is_custom=True
+    )
+    doc = window.model_dump()
+    await db.window_types.insert_one(doc)
+    return window
+
+@api_router.put("/window-types/{window_id}")
+async def update_window_type(window_id: str, input: WindowTypeCreate, current_user: dict = Depends(get_current_user)):
+    existing = await db.window_types.find_one({"id": window_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Window type not found")
+    
+    # Users can only edit their own custom products
+    if existing.get("user_id") and existing["user_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Nuk keni leje për të ndryshuar këtë produkt")
+    
+    update_data = input.model_dump(exclude_none=True)
+    await db.window_types.update_one({"id": window_id}, {"$set": update_data})
+    
+    updated = await db.window_types.find_one({"id": window_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/window-types/{window_id}")
+async def delete_window_type(window_id: str, current_user: dict = Depends(get_current_user)):
+    existing = await db.window_types.find_one({"id": window_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Window type not found")
+    
+    if existing.get("user_id") != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Mund të fshini vetëm produktet tuaja")
+    
+    await db.window_types.delete_one({"id": window_id})
+    return {"message": "Produkti u fshi me sukses"}
+
+@api_router.get("/door-types")
+async def get_door_types(current_user: dict = Depends(get_current_user)):
+    doors = await db.door_types.find(
+        {"$or": [{"user_id": None}, {"user_id": {"$exists": False}}, {"user_id": current_user["id"]}]},
+        {"_id": 0}
+    ).to_list(100)
     return doors
 
-@api_router.get("/profiles", response_model=List[Profile])
-async def get_profiles():
-    profiles = await db.profiles.find({}, {"_id": 0}).to_list(100)
+@api_router.post("/door-types")
+async def create_door_type(input: DoorTypeCreate, current_user: dict = Depends(get_current_user)):
+    door = DoorType(
+        user_id=current_user["id"],
+        name=input.name,
+        code=input.code,
+        door_style=input.door_style,
+        base_price_per_sqm=input.base_price_per_sqm,
+        description=input.description,
+        image_url=input.image_url,
+        is_custom=True
+    )
+    doc = door.model_dump()
+    await db.door_types.insert_one(doc)
+    return door
+
+@api_router.put("/door-types/{door_id}")
+async def update_door_type(door_id: str, input: DoorTypeCreate, current_user: dict = Depends(get_current_user)):
+    existing = await db.door_types.find_one({"id": door_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Door type not found")
+    
+    if existing.get("user_id") and existing["user_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Nuk keni leje për të ndryshuar këtë produkt")
+    
+    update_data = input.model_dump(exclude_none=True)
+    await db.door_types.update_one({"id": door_id}, {"$set": update_data})
+    
+    updated = await db.door_types.find_one({"id": door_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/door-types/{door_id}")
+async def delete_door_type(door_id: str, current_user: dict = Depends(get_current_user)):
+    existing = await db.door_types.find_one({"id": door_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Door type not found")
+    
+    if existing.get("user_id") != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Mund të fshini vetëm produktet tuaja")
+    
+    await db.door_types.delete_one({"id": door_id})
+    return {"message": "Produkti u fshi me sukses"}
+
+@api_router.get("/profiles")
+async def get_profiles(current_user: dict = Depends(get_current_user)):
+    profiles = await db.profiles.find(
+        {"$or": [{"user_id": None}, {"user_id": {"$exists": False}}, {"user_id": current_user["id"]}]},
+        {"_id": 0}
+    ).to_list(100)
     return profiles
 
-@api_router.get("/glass-types", response_model=List[GlassType])
+@api_router.post("/profiles")
+async def create_profile(input: ProfileCreate, current_user: dict = Depends(get_current_user)):
+    profile = Profile(
+        user_id=current_user["id"],
+        name=input.name,
+        brand=input.brand,
+        width_mm=input.width_mm,
+        insulation_coefficient=input.insulation_coefficient,
+        price_multiplier=input.price_multiplier,
+        description=input.description,
+        is_custom=True
+    )
+    doc = profile.model_dump()
+    await db.profiles.insert_one(doc)
+    return profile
+
+@api_router.put("/profiles/{profile_id}")
+async def update_profile(profile_id: str, input: ProfileCreate, current_user: dict = Depends(get_current_user)):
+    existing = await db.profiles.find_one({"id": profile_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    if existing.get("user_id") and existing["user_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Nuk keni leje për të ndryshuar këtë profil")
+    
+    update_data = input.model_dump(exclude_none=True)
+    await db.profiles.update_one({"id": profile_id}, {"$set": update_data})
+    
+    updated = await db.profiles.find_one({"id": profile_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/profiles/{profile_id}")
+async def delete_profile(profile_id: str, current_user: dict = Depends(get_current_user)):
+    existing = await db.profiles.find_one({"id": profile_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    if existing.get("user_id") != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Mund të fshini vetëm profilet tuaja")
+    
+    await db.profiles.delete_one({"id": profile_id})
+    return {"message": "Profili u fshi me sukses"}
+
+@api_router.get("/glass-types")
+async def get_glass_types(current_user: dict = Depends(get_current_user)):
+    glasses = await db.glass_types.find(
+        {"$or": [{"user_id": None}, {"user_id": {"$exists": False}}, {"user_id": current_user["id"]}]},
+        {"_id": 0}
+    ).to_list(100)
+    return glasses
+
+@api_router.post("/glass-types")
+async def create_glass_type(input: GlassTypeCreate, current_user: dict = Depends(get_current_user)):
+    glass = GlassType(
+        user_id=current_user["id"],
+        name=input.name,
+        layers=input.layers,
+        u_value=input.u_value,
+        price_per_sqm=input.price_per_sqm,
+        description=input.description,
+        is_custom=True
+    )
+    doc = glass.model_dump()
+    await db.glass_types.insert_one(doc)
+    return glass
+
+@api_router.put("/glass-types/{glass_id}")
+async def update_glass_type(glass_id: str, input: GlassTypeCreate, current_user: dict = Depends(get_current_user)):
+    existing = await db.glass_types.find_one({"id": glass_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Glass type not found")
+    
+    if existing.get("user_id") and existing["user_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Nuk keni leje për të ndryshuar këtë xham")
+    
+    update_data = input.model_dump(exclude_none=True)
+    await db.glass_types.update_one({"id": glass_id}, {"$set": update_data})
+    
+    updated = await db.glass_types.find_one({"id": glass_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/glass-types/{glass_id}")
+async def delete_glass_type(glass_id: str, current_user: dict = Depends(get_current_user)):
+    existing = await db.glass_types.find_one({"id": glass_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Glass type not found")
+    
+    if existing.get("user_id") != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Mund të fshini vetëm xhamat tuaj")
+    
+    await db.glass_types.delete_one({"id": glass_id})
+    return {"message": "Xhami u fshi me sukses"}
+
+@api_router.get("/colors")
+async def get_colors(current_user: dict = Depends(get_current_user)):
+    colors_list = await db.colors.find(
+        {"$or": [{"user_id": None}, {"user_id": {"$exists": False}}, {"user_id": current_user["id"]}]},
+        {"_id": 0}
+    ).to_list(100)
+    return colors_list
+
+@api_router.post("/colors")
+async def create_color(input: ColorCreate, current_user: dict = Depends(get_current_user)):
+    color = Color(
+        user_id=current_user["id"],
+        name=input.name,
+        code=input.code,
+        hex_color=input.hex_color,
+        price_multiplier=input.price_multiplier,
+        is_custom=True
+    )
+    doc = color.model_dump()
+    await db.colors.insert_one(doc)
+    return color
+
+@api_router.put("/colors/{color_id}")
+async def update_color(color_id: str, input: ColorCreate, current_user: dict = Depends(get_current_user)):
+    existing = await db.colors.find_one({"id": color_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Color not found")
+    
+    if existing.get("user_id") and existing["user_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Nuk keni leje për të ndryshuar këtë ngjyrë")
+    
+    update_data = input.model_dump(exclude_none=True)
+    await db.colors.update_one({"id": color_id}, {"$set": update_data})
+    
+    updated = await db.colors.find_one({"id": color_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/colors/{color_id}")
+async def delete_color(color_id: str, current_user: dict = Depends(get_current_user)):
+    existing = await db.colors.find_one({"id": color_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Color not found")
+    
+    if existing.get("user_id") != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Mund të fshini vetëm ngjyrat tuaja")
+    
+    await db.colors.delete_one({"id": color_id})
+    return {"message": "Ngjyra u fshi me sukses"}
+
+@api_router.get("/hardware")
+async def get_hardware(current_user: dict = Depends(get_current_user)):
+    hardware_list = await db.hardware.find(
+        {"$or": [{"user_id": None}, {"user_id": {"$exists": False}}, {"user_id": current_user["id"]}]},
+        {"_id": 0}
+    ).to_list(100)
+    return hardware_list
+
+@api_router.post("/hardware")
+async def create_hardware(input: HardwareCreate, current_user: dict = Depends(get_current_user)):
+    hw = Hardware(
+        user_id=current_user["id"],
+        name=input.name,
+        brand=input.brand,
+        type=input.type,
+        price=input.price,
+        is_custom=True
+    )
+    doc = hw.model_dump()
+    await db.hardware.insert_one(doc)
+    return hw
+
+@api_router.put("/hardware/{hardware_id}")
+async def update_hardware(hardware_id: str, input: HardwareCreate, current_user: dict = Depends(get_current_user)):
+    existing = await db.hardware.find_one({"id": hardware_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Hardware not found")
+    
+    if existing.get("user_id") and existing["user_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Nuk keni leje për të ndryshuar këtë aksesor")
+    
+    update_data = input.model_dump(exclude_none=True)
+    await db.hardware.update_one({"id": hardware_id}, {"$set": update_data})
+    
+    updated = await db.hardware.find_one({"id": hardware_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/hardware/{hardware_id}")
+async def delete_hardware(hardware_id: str, current_user: dict = Depends(get_current_user)):
+    existing = await db.hardware.find_one({"id": hardware_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Hardware not found")
+    
+    if existing.get("user_id") != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Mund të fshini vetëm aksesorët tuaj")
+    
+    await db.hardware.delete_one({"id": hardware_id})
+    return {"message": "Aksesori u fshi me sukses"}
 async def get_glass_types():
     glasses = await db.glass_types.find({}, {"_id": 0}).to_list(100)
     return glasses
