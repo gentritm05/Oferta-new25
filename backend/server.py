@@ -100,23 +100,44 @@ class StatusCheckCreate(BaseModel):
 class WindowType(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: Optional[str] = None  # None = global, otherwise user's custom product
     name: str
     code: str
     opening_type: str
     panels: int
     base_price_per_sqm: float
     description: Optional[str] = None
-    svg_icon: Optional[str] = None
+    image_url: Optional[str] = None
+    is_custom: bool = False
+
+class WindowTypeCreate(BaseModel):
+    name: str
+    code: str
+    opening_type: str = "fixed"
+    panels: int = 1
+    base_price_per_sqm: float
+    description: Optional[str] = None
+    image_url: Optional[str] = None
 
 class DoorType(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: Optional[str] = None
     name: str
     code: str
     door_style: str
     base_price_per_sqm: float
     description: Optional[str] = None
-    svg_icon: Optional[str] = None
+    image_url: Optional[str] = None
+    is_custom: bool = False
+
+class DoorTypeCreate(BaseModel):
+    name: str
+    code: str
+    door_style: str = "standard"
+    base_price_per_sqm: float
+    description: Optional[str] = None
+    image_url: Optional[str] = None
 
 class Profile(BaseModel):
     model_config = ConfigDict(extra="ignore")
