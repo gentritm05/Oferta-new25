@@ -142,36 +142,71 @@ class DoorTypeCreate(BaseModel):
 class Profile(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: Optional[str] = None
     name: str
     brand: str
     width_mm: int
     insulation_coefficient: float
     price_multiplier: float
     description: Optional[str] = None
+    is_custom: bool = False
+
+class ProfileCreate(BaseModel):
+    name: str
+    brand: str
+    width_mm: int = 70
+    insulation_coefficient: float = 1.2
+    price_multiplier: float = 1.0
+    description: Optional[str] = None
 
 class GlassType(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: Optional[str] = None
     name: str
     layers: int
     u_value: float
+    price_per_sqm: float
+    description: Optional[str] = None
+    is_custom: bool = False
+
+class GlassTypeCreate(BaseModel):
+    name: str
+    layers: int = 2
+    u_value: float = 1.1
     price_per_sqm: float
     description: Optional[str] = None
 
 class Color(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: Optional[str] = None
     name: str
     code: str
     hex_color: str
     price_multiplier: float
+    is_custom: bool = False
+
+class ColorCreate(BaseModel):
+    name: str
+    code: str
+    hex_color: str = "#FFFFFF"
+    price_multiplier: float = 1.0
 
 class Hardware(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: Optional[str] = None
     name: str
     brand: str
     type: str
+    price: float
+    is_custom: bool = False
+
+class HardwareCreate(BaseModel):
+    name: str
+    brand: str
+    type: str = "mechanism"
     price: float
 
 # Customer - now with user_id for multi-tenancy
