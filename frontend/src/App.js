@@ -441,6 +441,25 @@ const AdminPanel = ({ api, onLogout }) => {
     }
   };
 
+  const handleUpdatePrice = async () => {
+    const priceValue = parseFloat(newPrice);
+    if (isNaN(priceValue) || priceValue <= 0) {
+      alert("Ju lutem vendosni një çmim valid!");
+      return;
+    }
+    setSavingPrice(true);
+    try {
+      const response = await api.put("/admin/pricing", { monthly_price: priceValue });
+      setPricing(response.data);
+      alert("Çmimi u përditësua me sukses!");
+    } catch (error) {
+      console.error("Error updating price:", error);
+      alert("Gabim gjatë përditësimit të çmimit!");
+    } finally {
+      setSavingPrice(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
