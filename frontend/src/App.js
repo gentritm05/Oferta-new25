@@ -638,16 +638,17 @@ const AdminPanel = ({ api, onLogout }) => {
                 {activatingUser.email}
               </p>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Numri i muajve (50€/muaj)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Numri i muajve ({pricing?.monthly_price || 50}€/muaj)</label>
                 <select
                   value={months}
                   onChange={(e) => setMonths(parseInt(e.target.value))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 >
-                  <option value={1}>1 muaj - 50€</option>
-                  <option value={3}>3 muaj - 150€</option>
-                  <option value={6}>6 muaj - 300€</option>
-                  <option value={12}>12 muaj - 600€</option>
+                  {pricing?.packages?.map((pkg) => (
+                    <option key={pkg.months} value={pkg.months}>
+                      {pkg.months} muaj - {pkg.price.toFixed(2)}€ {pkg.discount > 0 ? `(-${pkg.discount}%)` : ""}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="flex gap-2">
