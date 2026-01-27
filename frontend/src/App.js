@@ -377,9 +377,24 @@ const AuthPage = ({ onLogin }) => {
         </div>
 
         {!isLogin && (
-          <div className="mt-6 p-4 bg-amber-50 rounded-lg">
-            <p className="text-sm text-amber-800">
-              <strong>Çmimi:</strong> 50€/muaj<br/>
+          <div className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200" data-testid="pricing-info">
+            <h3 className="font-semibold text-blue-800 mb-3">Paketat e Abonimit</h3>
+            {pricing?.packages ? (
+              <div className="grid grid-cols-2 gap-2">
+                {pricing.packages.map((pkg) => (
+                  <div key={pkg.months} className="bg-white p-2 rounded-lg text-center shadow-sm">
+                    <div className="text-xs text-gray-500">{pkg.months} muaj</div>
+                    <div className="font-bold text-blue-600">{pkg.price.toFixed(2)}€</div>
+                    {pkg.discount > 0 && (
+                      <span className="text-xs bg-green-100 text-green-700 px-1 rounded">-{pkg.discount}%</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-blue-800">Duke ngarkuar çmimet...</p>
+            )}
+            <p className="text-xs text-gray-600 mt-3">
               Pas regjistrimit, administratori do t'ju aktivizojë llogarinë pasi të konfirmojë pagesën.
             </p>
           </div>
