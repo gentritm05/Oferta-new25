@@ -473,6 +473,22 @@ async def login(input: UserLogin):
         }
     }
 
+class ProfileUpdate(BaseModel):
+    company_name: Optional[str] = None
+    phone: Optional[str] = None
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
+class PasswordResetRequest(BaseModel):
+    email: str
+
+class PasswordReset(BaseModel):
+    email: str
+    reset_code: str
+    new_password: str
+
 @api_router.get("/auth/me")
 async def get_me(current_user: dict = Depends(get_current_user)):
     return {
