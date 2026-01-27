@@ -502,6 +502,89 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "subscription_end": current_user.get("subscription_end")
     }
 
+@api_router.put("/auth/profile")
+async def update_profile(input: ProfileUpdate, current_user: dict = Depends(get_current_user)):
+    """Update user profile (company name, phone)"""
+    update_data = {}
+    if input.company_name:
+        update_data["company_name"] = input.company_name
+    if input.phone:
+        update_data["phone"] = input.phone
+    
+    if update_data:
+        await db.users.update_one({"id": current_user["id"]}, {"$set": update_data})
+    
+    updated_user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password_hash": 0})
+    return updated_user
+
+@api_router.put("/auth/change-password")
+async def change_password(input: PasswordChange, current_user: dict = Depends(get_current_user)):
+    """Change password for logged in user"""
+    user = await db.users.find_one({"id": current_user["id"]})
+    
+    if not verify_password(input.current_password, user["password_hash"]):
+        raise HTTPException(status_code=400, detail="Fjalëkalimi aktual është i gabuar")
+    
+    new_hash = hash_password(input.new_password)
+    await db.users.update_one({"id": current_user["id"]}, {"$set": {"password_hash": new_hash}})
+    
+    return {"message": "Fjalëkalimi u ndryshua me sukses"}
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(input: PasswordResetRequest):
+    """Request password reset - generates a reset code"""
+    user = await db.users.find_one({"email": input.email.lower()})
+    if not user:
+        # Don't reveal if email exists
+        return {"message": "Nëse email-i ekziston, do të merrni kodin e rikthimit"}
+    
+    # Generate a simple 6-digit reset code
+    import random
+    reset_code = str(random.randint(100000, 999999))
+    
+    # Store reset code with expiration (30 minutes)
+    expiration = datetime.now(timezone.utc) + timedelta(minutes=30)
+    await db.password_resets.update_one(
+        {"email": input.email.lower()},
+        {"$set": {"code": reset_code, "expires_at": expiration.isoformat()}},
+        upsert=True
+    )
+    
+    # In production, you would send an email here
+    # For now, we'll return the code (in production, remove this!)
+    return {
+        "message": "Kodi i rikthimit u krijua",
+        "reset_code": reset_code,  # REMOVE IN PRODUCTION - just for demo
+        "note": "Në prodhim, ky kod do të dërgohet në email"
+    }
+
+@api_router.post("/auth/reset-password")
+async def reset_password(input: PasswordReset):
+    """Reset password using the reset code"""
+    reset_record = await db.password_resets.find_one({"email": input.email.lower()})
+    
+    if not reset_record:
+        raise HTTPException(status_code=400, detail="Kodi i rikthimit nuk ekziston")
+    
+    if reset_record["code"] != input.reset_code:
+        raise HTTPException(status_code=400, detail="Kodi i rikthimit është i gabuar")
+    
+    expires_at = datetime.fromisoformat(reset_record["expires_at"]) if isinstance(reset_record["expires_at"], str) else reset_record["expires_at"]
+    if expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Kodi i rikthimit ka skaduar")
+    
+    # Update password
+    new_hash = hash_password(input.new_password)
+    result = await db.users.update_one({"email": input.email.lower()}, {"$set": {"password_hash": new_hash}})
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Përdoruesi nuk u gjet")
+    
+    # Delete the reset code
+    await db.password_resets.delete_one({"email": input.email.lower()})
+    
+    return {"message": "Fjalëkalimi u rikthye me sukses"}
+
 
 # ==================== ADMIN ROUTES ====================
 
