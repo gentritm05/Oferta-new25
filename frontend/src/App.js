@@ -236,12 +236,18 @@ const AuthPage = ({ onLogin }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [pricing, setPricing] = useState(null);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     company_name: "",
     phone: ""
   });
+
+  useEffect(() => {
+    // Load pricing for registration page
+    axios.get(`${API}/pricing`).then(res => setPricing(res.data)).catch(console.error);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
