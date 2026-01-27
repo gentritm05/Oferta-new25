@@ -586,6 +586,60 @@ async def reset_password(input: PasswordReset):
     return {"message": "Fjalëkalimi u rikthye me sukses"}
 
 
+# ==================== PRICING/SETTINGS ====================
+
+class PricingUpdate(BaseModel):
+    monthly_price: float
+
+@api_router.get("/pricing")
+async def get_pricing():
+    """Get current pricing - public endpoint"""
+    settings = await db.settings.find_one({"key": "pricing"})
+    if not settings:
+        # Default pricing
+        return {
+            "monthly_price": 50.0,
+            "packages": [
+                {"months": 1, "price": 50.0, "discount": 0},
+                {"months": 3, "price": 135.0, "discount": 10},
+                {"months": 6, "price": 240.0, "discount": 20},
+                {"months": 12, "price": 420.0, "discount": 30}
+            ]
+        }
+    
+    monthly = settings.get("monthly_price", 50.0)
+    return {
+        "monthly_price": monthly,
+        "packages": [
+            {"months": 1, "price": monthly, "discount": 0},
+            {"months": 3, "price": round(monthly * 3 * 0.9, 2), "discount": 10},
+            {"months": 6, "price": round(monthly * 6 * 0.8, 2), "discount": 20},
+            {"months": 12, "price": round(monthly * 12 * 0.7, 2), "discount": 30}
+        ]
+    }
+
+@api_router.put("/admin/pricing")
+async def update_pricing(input: PricingUpdate, admin: dict = Depends(get_admin_user)):
+    """Update pricing - admin only"""
+    await db.settings.update_one(
+        {"key": "pricing"},
+        {"$set": {"monthly_price": input.monthly_price}},
+        upsert=True
+    )
+    
+    monthly = input.monthly_price
+    return {
+        "monthly_price": monthly,
+        "packages": [
+            {"months": 1, "price": monthly, "discount": 0},
+            {"months": 3, "price": round(monthly * 3 * 0.9, 2), "discount": 10},
+            {"months": 6, "price": round(monthly * 6 * 0.8, 2), "discount": 20},
+            {"months": 12, "price": round(monthly * 12 * 0.7, 2), "discount": 30}
+        ],
+        "message": "Çmimet u përditësuan me sukses"
+    }
+
+
 # ==================== ADMIN ROUTES ====================
 
 @api_router.get("/admin/users")
