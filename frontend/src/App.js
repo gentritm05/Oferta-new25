@@ -512,6 +512,52 @@ const AdminPanel = ({ api, onLogout }) => {
           </div>
         </div>
 
+        {/* Pricing Management */}
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-8" data-testid="pricing-management">
+          <h2 className="text-lg font-semibold mb-4">Menaxhimi i Çmimit të Abonimit</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Çmimi Mujor (€)</label>
+              <div className="flex gap-3">
+                <input
+                  type="number"
+                  min="1"
+                  step="0.01"
+                  value={newPrice}
+                  onChange={(e) => setNewPrice(e.target.value)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="50.00"
+                  data-testid="monthly-price-input"
+                />
+                <button
+                  onClick={handleUpdatePrice}
+                  disabled={savingPrice}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                  data-testid="save-price-btn"
+                >
+                  {savingPrice ? "Duke ruajtur..." : "Ruaj"}
+                </button>
+              </div>
+              <p className="text-sm text-gray-500 mt-2">Çmimi aktual: <strong>{pricing?.monthly_price || 50}€/muaj</strong></p>
+            </div>
+            
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Paketa e Çmimeve (me zbritje)</h3>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                {pricing?.packages?.map((pkg) => (
+                  <div key={pkg.months} className="flex justify-between items-center bg-white p-2 rounded">
+                    <span className="text-gray-600">{pkg.months} muaj</span>
+                    <div className="text-right">
+                      <span className="font-bold text-blue-600">{pkg.price.toFixed(2)}€</span>
+                      {pkg.discount > 0 && <span className="ml-1 text-xs text-green-600">(-{pkg.discount}%)</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Users List */}
         <div className="bg-white rounded-xl shadow-sm">
           <div className="p-4 border-b">
