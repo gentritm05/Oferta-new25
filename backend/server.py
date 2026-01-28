@@ -543,15 +543,14 @@ async def change_password(input: PasswordChange, current_user: dict = Depends(ge
 
 @api_router.post("/auth/forgot-password")
 async def forgot_password(input: PasswordResetRequest):
-    """Request password reset - generates a reset code"""
+    """Request password reset - generates a reset code and sends email"""
     user = await db.users.find_one({"email": input.email.lower()})
     if not user:
         # Don't reveal if email exists
-        return {"message": "Nëse email-i ekziston, do të merrni kodin e rikthimit"}
+        return {"message": "Nëse email-i ekziston, do të merrni kodin e rikthimit", "email_sent": False}
     
     # Generate a simple 6-digit reset code
-    import random
-    reset_code = str(random.randint(100000, 999999))
+    reset_code = ''.join(random.choices(string.digits, k=6))
     
     # Store reset code with expiration (30 minutes)
     expiration = datetime.now(timezone.utc) + timedelta(minutes=30)
@@ -561,13 +560,56 @@ async def forgot_password(input: PasswordResetRequest):
         upsert=True
     )
     
-    # In production, you would send an email here
-    # For now, we'll return the code (in production, remove this!)
-    return {
+    # Try to send email with Resend
+    email_sent = False
+    resend_api_key = os.environ.get('RESEND_API_KEY')
+    
+    if RESEND_AVAILABLE and resend_api_key and resend_api_key != 're_your_api_key_here':
+        try:
+            resend.api_key = resend_api_key
+            sender_email = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
+            
+            html_content = f"""
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #1e40af;">SMO - Rikthimi i Fjalëkalimit</h2>
+                <p>Përshëndetje,</p>
+                <p>Keni kërkuar rikthimin e fjalëkalimit për llogarinë tuaj.</p>
+                <p>Kodi juaj i rikthimit është:</p>
+                <div style="background: #f3f4f6; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e40af;">{reset_code}</span>
+                </div>
+                <p>Ky kod është i vlefshëm për 30 minuta.</p>
+                <p>Nëse nuk keni kërkuar rikthimin e fjalëkalimit, injoroni këtë email.</p>
+                <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+                <p style="color: #6b7280; font-size: 12px;">© SMO - Sistemi i Menaxhimit të Ofertave</p>
+            </div>
+            """
+            
+            params = {
+                "from": sender_email,
+                "to": [input.email.lower()],
+                "subject": "SMO - Kodi i Rikthimit të Fjalëkalimit",
+                "html": html_content
+            }
+            
+            await asyncio.to_thread(resend.Emails.send, params)
+            email_sent = True
+            logger.info(f"Password reset email sent to {input.email}")
+        except Exception as e:
+            logger.error(f"Failed to send email: {e}")
+            email_sent = False
+    
+    response = {
         "message": "Kodi i rikthimit u krijua",
-        "reset_code": reset_code,  # REMOVE IN PRODUCTION - just for demo
-        "note": "Në prodhim, ky kod do të dërgohet në email"
+        "email_sent": email_sent
     }
+    
+    # If email wasn't sent, show the code (for testing/demo)
+    if not email_sent:
+        response["reset_code"] = reset_code
+        response["note"] = "Email nuk u dërgua. Vendosni RESEND_API_KEY për të aktivizuar dërgimin me email."
+    
+    return response
 
 @api_router.post("/auth/reset-password")
 async def reset_password(input: PasswordReset):
