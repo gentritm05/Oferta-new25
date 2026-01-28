@@ -1429,6 +1429,320 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     }
 
 
+# ==================== PAYMENT MODELS ====================
+
+class PaymentTransaction(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    user_email: str
+    session_id: str
+    package_months: int
+    amount: float
+    currency: str = "eur"
+    payment_status: str = "pending"  # pending, paid, failed, expired
+    status: str = "initiated"  # initiated, completed, cancelled
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class CreateCheckoutRequest(BaseModel):
+    package_months: int  # 1, 3, 6, or 12
+    origin_url: str
+
+
+# ==================== PAYMENT ENDPOINTS ====================
+
+async def get_package_price(months: int) -> float:
+    """Get package price from database settings"""
+    settings = await db.settings.find_one({"key": "pricing"})
+    monthly_price = settings.get("monthly_price", 50.0) if settings else 50.0
+    
+    # Apply discounts
+    discounts = {1: 0, 3: 10, 6: 20, 12: 30}
+    discount = discounts.get(months, 0)
+    total = monthly_price * months * (1 - discount / 100)
+    return round(total, 2)
+
+
+@api_router.post("/payments/create-checkout")
+async def create_checkout_session(request: CreateCheckoutRequest, http_request: Request):
+    """Create Stripe checkout session for subscription payment"""
+    
+    # Validate package
+    if request.package_months not in [1, 3, 6, 12]:
+        raise HTTPException(status_code=400, detail="Paketa e pavlefshme. Zgjidhni 1, 3, 6, ose 12 muaj.")
+    
+    # Get price from backend (security - never trust frontend amount)
+    amount = await get_package_price(request.package_months)
+    
+    # Build URLs
+    success_url = f"{request.origin_url}/payment-success?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{request.origin_url}/payment-cancel"
+    
+    # Initialize Stripe
+    api_key = os.environ.get('STRIPE_API_KEY')
+    host_url = str(http_request.base_url).rstrip('/')
+    webhook_url = f"{host_url}api/webhook/stripe"
+    
+    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+    
+    # Create temporary user ID for tracking
+    temp_user_id = str(uuid.uuid4())
+    
+    # Metadata for tracking
+    metadata = {
+        "temp_user_id": temp_user_id,
+        "package_months": str(request.package_months),
+        "amount_eur": str(amount),
+        "type": "subscription"
+    }
+    
+    # Create checkout session (Apple Pay, Visa, Mastercard supported via 'card')
+    checkout_request = CheckoutSessionRequest(
+        amount=float(amount),
+        currency="eur",
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata=metadata,
+        payment_methods=["card"]  # Supports Apple Pay, Visa, Mastercard
+    )
+    
+    session: CheckoutSessionResponse = await stripe_checkout.create_checkout_session(checkout_request)
+    
+    # Create payment transaction record
+    transaction = PaymentTransaction(
+        user_id=temp_user_id,
+        user_email="pending",
+        session_id=session.session_id,
+        package_months=request.package_months,
+        amount=amount,
+        currency="eur",
+        payment_status="pending",
+        status="initiated"
+    )
+    
+    doc = transaction.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    await db.payment_transactions.insert_one(doc)
+    
+    return {
+        "checkout_url": session.url,
+        "session_id": session.session_id,
+        "amount": amount,
+        "package_months": request.package_months
+    }
+
+
+@api_router.post("/payments/create-checkout-for-user")
+async def create_checkout_for_user(request: CreateCheckoutRequest, http_request: Request, current_user: dict = Depends(get_current_user)):
+    """Create Stripe checkout session for existing user subscription renewal"""
+    
+    # Validate package
+    if request.package_months not in [1, 3, 6, 12]:
+        raise HTTPException(status_code=400, detail="Paketa e pavlefshme.")
+    
+    amount = await get_package_price(request.package_months)
+    
+    success_url = f"{request.origin_url}/payment-success?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{request.origin_url}/payment-cancel"
+    
+    api_key = os.environ.get('STRIPE_API_KEY')
+    host_url = str(http_request.base_url).rstrip('/')
+    webhook_url = f"{host_url}api/webhook/stripe"
+    
+    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+    
+    metadata = {
+        "user_id": current_user["id"],
+        "user_email": current_user["email"],
+        "package_months": str(request.package_months),
+        "amount_eur": str(amount),
+        "type": "subscription_renewal"
+    }
+    
+    checkout_request = CheckoutSessionRequest(
+        amount=float(amount),
+        currency="eur",
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata=metadata,
+        payment_methods=["card"]
+    )
+    
+    session: CheckoutSessionResponse = await stripe_checkout.create_checkout_session(checkout_request)
+    
+    transaction = PaymentTransaction(
+        user_id=current_user["id"],
+        user_email=current_user["email"],
+        session_id=session.session_id,
+        package_months=request.package_months,
+        amount=amount,
+        currency="eur",
+        payment_status="pending",
+        status="initiated"
+    )
+    
+    doc = transaction.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    await db.payment_transactions.insert_one(doc)
+    
+    return {
+        "checkout_url": session.url,
+        "session_id": session.session_id,
+        "amount": amount,
+        "package_months": request.package_months
+    }
+
+
+@api_router.get("/payments/status/{session_id}")
+async def get_payment_status(session_id: str, http_request: Request):
+    """Check payment status and activate user if paid"""
+    
+    api_key = os.environ.get('STRIPE_API_KEY')
+    host_url = str(http_request.base_url).rstrip('/')
+    webhook_url = f"{host_url}api/webhook/stripe"
+    
+    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+    
+    # Get status from Stripe
+    checkout_status: CheckoutStatusResponse = await stripe_checkout.get_checkout_status(session_id)
+    
+    # Find transaction
+    transaction = await db.payment_transactions.find_one({"session_id": session_id})
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaksioni nuk u gjet")
+    
+    # Update transaction status
+    update_data = {
+        "payment_status": checkout_status.payment_status,
+        "status": checkout_status.status,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # If payment is successful and not already processed
+    if checkout_status.payment_status == "paid" and transaction.get("status") != "completed":
+        update_data["status"] = "completed"
+        
+        # Get user_id from metadata
+        user_id = checkout_status.metadata.get("user_id")
+        user_email = checkout_status.metadata.get("user_email")
+        package_months = int(checkout_status.metadata.get("package_months", 1))
+        
+        # If this is for an existing user, activate them
+        if user_id:
+            user = await db.users.find_one({"id": user_id})
+            if user:
+                now = datetime.now(timezone.utc)
+                # Extend from existing end date if not expired
+                existing_end = user.get("subscription_end")
+                if existing_end:
+                    existing_end_dt = datetime.fromisoformat(existing_end) if isinstance(existing_end, str) else existing_end
+                    start_date = existing_end_dt if existing_end_dt > now else now
+                else:
+                    start_date = now
+                
+                end_date = start_date + timedelta(days=30 * package_months)
+                
+                await db.users.update_one(
+                    {"id": user_id},
+                    {"$set": {
+                        "is_active": True,
+                        "subscription_start": now.isoformat(),
+                        "subscription_end": end_date.isoformat()
+                    }}
+                )
+                
+                # Update transaction with user info
+                update_data["user_id"] = user_id
+                update_data["user_email"] = user_email or user.get("email")
+    
+    elif checkout_status.status == "expired":
+        update_data["status"] = "expired"
+    
+    await db.payment_transactions.update_one({"session_id": session_id}, {"$set": update_data})
+    
+    return {
+        "status": update_data.get("status", checkout_status.status),
+        "payment_status": checkout_status.payment_status,
+        "amount": checkout_status.amount_total / 100,  # Convert from cents
+        "currency": checkout_status.currency,
+        "package_months": int(checkout_status.metadata.get("package_months", 1))
+    }
+
+
+@api_router.post("/webhook/stripe")
+async def stripe_webhook(request: Request):
+    """Handle Stripe webhooks for payment events"""
+    
+    api_key = os.environ.get('STRIPE_API_KEY')
+    host_url = str(request.base_url).rstrip('/')
+    webhook_url = f"{host_url}api/webhook/stripe"
+    
+    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+    
+    body = await request.body()
+    signature = request.headers.get("Stripe-Signature")
+    
+    try:
+        webhook_response = await stripe_checkout.handle_webhook(body, signature)
+        
+        # Update transaction based on webhook event
+        if webhook_response.session_id:
+            update_data = {
+                "payment_status": webhook_response.payment_status,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+            
+            if webhook_response.payment_status == "paid":
+                update_data["status"] = "completed"
+                
+                # Activate user
+                user_id = webhook_response.metadata.get("user_id")
+                package_months = int(webhook_response.metadata.get("package_months", 1))
+                
+                if user_id:
+                    user = await db.users.find_one({"id": user_id})
+                    if user:
+                        now = datetime.now(timezone.utc)
+                        existing_end = user.get("subscription_end")
+                        if existing_end:
+                            existing_end_dt = datetime.fromisoformat(existing_end) if isinstance(existing_end, str) else existing_end
+                            start_date = existing_end_dt if existing_end_dt > now else now
+                        else:
+                            start_date = now
+                        
+                        end_date = start_date + timedelta(days=30 * package_months)
+                        
+                        await db.users.update_one(
+                            {"id": user_id},
+                            {"$set": {
+                                "is_active": True,
+                                "subscription_start": now.isoformat(),
+                                "subscription_end": end_date.isoformat()
+                            }}
+                        )
+            
+            await db.payment_transactions.update_one(
+                {"session_id": webhook_response.session_id},
+                {"$set": update_data}
+            )
+        
+        return {"status": "ok"}
+    
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+@api_router.get("/admin/payments")
+async def get_payment_history(admin: dict = Depends(get_admin_user)):
+    """Get all payment transactions - admin only"""
+    transactions = await db.payment_transactions.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return transactions
+
+
 # ==================== SEED DATA ====================
 
 @api_router.post("/seed")
