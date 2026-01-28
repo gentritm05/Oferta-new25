@@ -395,6 +395,107 @@ const AuthPage = ({ onLogin }) => {
     }
   };
 
+  // Forgot Password Modal
+  if (showForgotPassword) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4" data-testid="forgot-password-page">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4 text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="16" r="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-800">Rikthe Fjalëkalimin</h1>
+            <p className="text-gray-500">{forgotPasswordStep === 1 ? "Vendosni email-in tuaj" : "Vendosni kodin dhe fjalëkalimin e ri"}</p>
+          </div>
+
+          {error && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm">{error}</div>
+          )}
+
+          {success && (
+            <div className="bg-green-50 text-green-600 p-3 rounded-lg mb-4 text-sm">{success}</div>
+          )}
+
+          {displayedResetCode && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg mb-4 text-center">
+              <p className="text-xs mb-1">Kodi i rikthimit (për testim):</p>
+              <p className="text-2xl font-bold tracking-widest">{displayedResetCode}</p>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {forgotPasswordStep === 1 && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="email@kompania.com"
+                    data-testid="forgot-email-input"
+                  />
+                </div>
+                <button
+                  onClick={handleForgotPassword}
+                  disabled={loading}
+                  className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                  data-testid="send-code-btn"
+                >
+                  {loading ? "Duke dërguar..." : "Dërgo Kodin"}
+                </button>
+              </>
+            )}
+
+            {forgotPasswordStep === 2 && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Kodi i Rikthimit</label>
+                  <input
+                    type="text"
+                    value={resetCode}
+                    onChange={(e) => setResetCode(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-xl tracking-widest"
+                    placeholder="000000"
+                    maxLength={6}
+                    data-testid="reset-code-input"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fjalëkalimi i Ri</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="••••••••"
+                    data-testid="new-password-input"
+                  />
+                </div>
+                <button
+                  onClick={handleResetPassword}
+                  disabled={loading}
+                  className="w-full py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+                  data-testid="reset-password-btn"
+                >
+                  {loading ? "Duke ruajtur..." : "Rikthe Fjalëkalimin"}
+                </button>
+              </>
+            )}
+
+            <button
+              onClick={() => { setShowForgotPassword(false); setForgotPasswordStep(1); setError(""); setSuccess(""); setDisplayedResetCode(""); }}
+              className="w-full py-2 text-gray-600 hover:text-gray-800 text-sm"
+            >
+              ← Kthehu te Kyçja
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4" data-testid="auth-page">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
