@@ -434,20 +434,66 @@ const AuthPage = ({ onLogin }) => {
             {pricing?.packages ? (
               <div className="grid grid-cols-2 gap-2">
                 {pricing.packages.map((pkg) => (
-                  <div key={pkg.months} className="bg-white p-2 rounded-lg text-center shadow-sm">
-                    <div className="text-xs text-gray-500">{pkg.months} muaj</div>
-                    <div className="font-bold text-blue-600">{pkg.price.toFixed(2)}€</div>
+                  <button
+                    key={pkg.months}
+                    onClick={() => setSelectedPackage(pkg.months)}
+                    className={`p-3 rounded-lg text-center shadow-sm transition-all cursor-pointer ${
+                      selectedPackage === pkg.months 
+                        ? "bg-blue-600 text-white ring-2 ring-blue-400" 
+                        : "bg-white hover:bg-blue-50"
+                    }`}
+                    data-testid={`package-${pkg.months}`}
+                  >
+                    <div className={`text-xs ${selectedPackage === pkg.months ? "text-blue-100" : "text-gray-500"}`}>
+                      {pkg.months} muaj
+                    </div>
+                    <div className={`font-bold ${selectedPackage === pkg.months ? "text-white" : "text-blue-600"}`}>
+                      {pkg.price.toFixed(2)}€
+                    </div>
                     {pkg.discount > 0 && (
-                      <span className="text-xs bg-green-100 text-green-700 px-1 rounded">-{pkg.discount}%</span>
+                      <span className={`text-xs px-1 rounded ${
+                        selectedPackage === pkg.months ? "bg-green-400 text-green-900" : "bg-green-100 text-green-700"
+                      }`}>
+                        -{pkg.discount}%
+                      </span>
                     )}
-                  </div>
+                  </button>
                 ))}
               </div>
             ) : (
               <p className="text-sm text-blue-800">Duke ngarkuar çmimet...</p>
             )}
-            <p className="text-xs text-gray-600 mt-3">
-              Pas regjistrimit, administratori do t'ju aktivizojë llogarinë pasi të konfirmojë pagesën.
+            
+            <div className="mt-4 pt-4 border-t border-blue-200">
+              <p className="text-xs text-gray-600 mb-3">
+                Pas regjistrimit, zgjidhni paketën dhe paguani online për aktivizim automatik.
+              </p>
+              <button
+                onClick={() => handlePayment(selectedPackage)}
+                disabled={loading}
+                className="w-full py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                data-testid="pay-now-btn"
+              >
+                {loading ? (
+                  "Duke procesuar..."
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    Paguaj {pricing?.packages?.find(p => p.months === selectedPackage)?.price?.toFixed(2) || ""}€ Online
+                  </>
+                )}
+              </button>
+              <div className="flex justify-center gap-2 mt-2">
+                <span className="text-xs text-gray-400">Visa</span>
+                <span className="text-xs text-gray-400">•</span>
+                <span className="text-xs text-gray-400">Mastercard</span>
+                <span className="text-xs text-gray-400">•</span>
+                <span className="text-xs text-gray-400">Apple Pay</span>
+              </div>
+            </div>
+            
+            <p className="text-xs text-center text-gray-500 mt-3">
+              Ose, regjistrohuni dhe administratori do t'ju aktivizojë manualisht.
             </p>
           </div>
         )}
