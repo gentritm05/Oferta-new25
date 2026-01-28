@@ -662,6 +662,27 @@ const AdminPanel = ({ api, onLogout }) => {
                 </button>
               </div>
               <p className="text-sm text-gray-500 mt-2">Çmimi aktual: <strong>{pricing?.monthly_price || 50}€/muaj</strong></p>
+              
+              {/* Online Payments Toggle */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Pagesat Online</span>
+                    <p className="text-xs text-gray-500">Aktivizo/çaktivizo pagesat me kartela</p>
+                  </div>
+                  <button
+                    onClick={handleToggleOnlinePayments}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      onlinePaymentsEnabled ? "bg-green-600" : "bg-gray-300"
+                    }`}
+                    data-testid="online-payments-toggle"
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      onlinePaymentsEnabled ? "translate-x-6" : "translate-x-1"
+                    }`} />
+                  </button>
+                </div>
+              </div>
             </div>
             
             <div className="bg-gray-50 rounded-lg p-4">
