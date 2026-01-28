@@ -1829,25 +1829,75 @@ async def seed_database():
     if existing_windows > 0:
         return {"message": "Database already seeded"}
     
-    # Window Types
+    # Window Types - Extended list based on catalog
     window_types = [
-        {"id": str(uuid.uuid4()), "name": "Dritare Fikse", "code": "W-FIX", "opening_type": "fixed", "panels": 1, "base_price_per_sqm": 80.0, "description": "Dritare fikse pa hapje"},
-        {"id": str(uuid.uuid4()), "name": "Dritare 1 Kanat Përkulëse", "code": "W-1T", "opening_type": "tilt", "panels": 1, "base_price_per_sqm": 120.0, "description": "Dritare me 1 kanat që hapet përkulëse"},
-        {"id": str(uuid.uuid4()), "name": "Dritare 1 Kanat Rrotulluese", "code": "W-1R", "opening_type": "turn", "panels": 1, "base_price_per_sqm": 130.0, "description": "Dritare me 1 kanat që hapet rrotulluese"},
-        {"id": str(uuid.uuid4()), "name": "Dritare 1 Kanat Përkulëse-Rrotulluese", "code": "W-1TR", "opening_type": "tilt_turn", "panels": 1, "base_price_per_sqm": 150.0, "description": "Dritare me 1 kanat përkulëse dhe rrotulluese"},
-        {"id": str(uuid.uuid4()), "name": "Dritare 2 Kanata Fikse", "code": "W-2FIX", "opening_type": "fixed", "panels": 2, "base_price_per_sqm": 90.0, "description": "Dritare me 2 kanata fikse"},
-        {"id": str(uuid.uuid4()), "name": "Dritare 2 Kanata Përkulëse-Rrotulluese", "code": "W-2TR", "opening_type": "tilt_turn", "panels": 2, "base_price_per_sqm": 180.0, "description": "Dritare me 2 kanata përkulëse-rrotulluese"},
-        {"id": str(uuid.uuid4()), "name": "Dritare Rrëshqitëse", "code": "W-SL", "opening_type": "sliding", "panels": 2, "base_price_per_sqm": 200.0, "description": "Dritare rrëshqitëse me 2 kanata"},
+        # Single panel windows
+        {"id": str(uuid.uuid4()), "name": "Dritare Fikse 1x1", "code": "W-FIX-1", "opening_type": "fixed", "panels": 1, "config": "1x1", "base_price_per_sqm": 80.0, "description": "Dritare fikse me 1 fashë"},
+        {"id": str(uuid.uuid4()), "name": "Dritare Përkulëse 1x1", "code": "W-TILT-1", "opening_type": "tilt", "panels": 1, "config": "1x1", "base_price_per_sqm": 120.0, "description": "Dritare me hapje përkulëse"},
+        {"id": str(uuid.uuid4()), "name": "Dritare Rrotulluese 1x1", "code": "W-TURN-1", "opening_type": "turn", "panels": 1, "config": "1x1", "base_price_per_sqm": 130.0, "description": "Dritare me hapje rrotulluese"},
+        {"id": str(uuid.uuid4()), "name": "Dritare Përkulëse-Rrotulluese 1x1", "code": "W-TT-1", "opening_type": "tilt_turn", "panels": 1, "config": "1x1", "base_price_per_sqm": 150.0, "description": "Dritare me hapje të dyfishtë"},
+        
+        # Two panel horizontal (1x2)
+        {"id": str(uuid.uuid4()), "name": "Dritare Fikse 1x2", "code": "W-FIX-1x2", "opening_type": "fixed", "panels": 2, "config": "1x2", "base_price_per_sqm": 90.0, "description": "Dritare fikse me 2 fasha horizontale"},
+        {"id": str(uuid.uuid4()), "name": "Dritare 1 Fikse + 1 Hapëse 1x2", "code": "W-FT-1x2", "opening_type": "mixed", "panels": 2, "config": "1x2", "base_price_per_sqm": 140.0, "description": "Dritare me 1 fashë fikse dhe 1 me hapje"},
+        {"id": str(uuid.uuid4()), "name": "Dritare 2 Hapëse 1x2", "code": "W-TT-1x2", "opening_type": "tilt_turn", "panels": 2, "config": "1x2", "base_price_per_sqm": 180.0, "description": "Dritare me 2 fasha me hapje"},
+        
+        # Two panel vertical (2x1)
+        {"id": str(uuid.uuid4()), "name": "Dritare Fikse 2x1", "code": "W-FIX-2x1", "opening_type": "fixed", "panels": 2, "config": "2x1", "base_price_per_sqm": 95.0, "description": "Dritare fikse me 2 fasha vertikale"},
+        {"id": str(uuid.uuid4()), "name": "Dritare Sipër Fikse + Poshtë Hapëse", "code": "W-FT-2x1", "opening_type": "mixed", "panels": 2, "config": "2x1", "base_price_per_sqm": 145.0, "description": "Sipër fikse, poshtë me hapje"},
+        
+        # Four panel (2x2)
+        {"id": str(uuid.uuid4()), "name": "Dritare Fikse 2x2", "code": "W-FIX-2x2", "opening_type": "fixed", "panels": 4, "config": "2x2", "base_price_per_sqm": 100.0, "description": "Dritare fikse me 4 fasha"},
+        {"id": str(uuid.uuid4()), "name": "Dritare 2x2 me 2 Hapëse Poshtë", "code": "W-TT-2x2", "opening_type": "mixed", "panels": 4, "config": "2x2", "base_price_per_sqm": 200.0, "description": "2 fikse sipër, 2 me hapje poshtë"},
+        {"id": str(uuid.uuid4()), "name": "Dritare 2x2 me 4 Hapëse", "code": "W-4TT-2x2", "opening_type": "tilt_turn", "panels": 4, "config": "2x2", "base_price_per_sqm": 250.0, "description": "4 fasha me hapje"},
+        
+        # Three panel (1x3)
+        {"id": str(uuid.uuid4()), "name": "Dritare Fikse 1x3", "code": "W-FIX-1x3", "opening_type": "fixed", "panels": 3, "config": "1x3", "base_price_per_sqm": 100.0, "description": "Dritare fikse me 3 fasha horizontale"},
+        {"id": str(uuid.uuid4()), "name": "Dritare 1x3 me Hapje në Mes", "code": "W-FTF-1x3", "opening_type": "mixed", "panels": 3, "config": "1x3", "base_price_per_sqm": 170.0, "description": "2 fikse anash, 1 me hapje në mes"},
+        {"id": str(uuid.uuid4()), "name": "Dritare 1x3 me 2 Hapëse", "code": "W-FTT-1x3", "opening_type": "mixed", "panels": 3, "config": "1x3", "base_price_per_sqm": 210.0, "description": "1 fikse, 2 me hapje"},
+        
+        # Sliding windows
+        {"id": str(uuid.uuid4()), "name": "Dritare Rrëshqitëse 2 Kanata", "code": "W-SL-2", "opening_type": "sliding", "panels": 2, "config": "sliding", "base_price_per_sqm": 200.0, "description": "Dritare rrëshqitëse me 2 kanata"},
+        {"id": str(uuid.uuid4()), "name": "Dritare Rrëshqitëse 3 Kanata", "code": "W-SL-3", "opening_type": "sliding", "panels": 3, "config": "sliding", "base_price_per_sqm": 250.0, "description": "Dritare rrëshqitëse me 3 kanata"},
+        {"id": str(uuid.uuid4()), "name": "Dritare Rrëshqitëse 4 Kanata", "code": "W-SL-4", "opening_type": "sliding", "panels": 4, "config": "sliding", "base_price_per_sqm": 300.0, "description": "Dritare rrëshqitëse me 4 kanata"},
+        
+        # Special windows
+        {"id": str(uuid.uuid4()), "name": "Dritare me Qoshe (Corner)", "code": "W-CORNER", "opening_type": "fixed", "panels": 2, "config": "corner", "base_price_per_sqm": 280.0, "description": "Dritare për qoshe 90°"},
+        {"id": str(uuid.uuid4()), "name": "Dritare Arkuese (Arch)", "code": "W-ARCH", "opening_type": "fixed", "panels": 1, "config": "arch", "base_price_per_sqm": 220.0, "description": "Dritare me hark sipër"},
     ]
     await db.window_types.insert_many(window_types)
     
-    # Door Types
+    # Door Types - Extended list
     door_types = [
-        {"id": str(uuid.uuid4()), "name": "Derë Hyrëse Standarde", "code": "D-ENT", "door_style": "entrance", "base_price_per_sqm": 250.0, "description": "Derë hyrëse e sigurt"},
-        {"id": str(uuid.uuid4()), "name": "Derë Ballkoni", "code": "D-BAL", "door_style": "standard", "base_price_per_sqm": 180.0, "description": "Derë për ballkon"},
-        {"id": str(uuid.uuid4()), "name": "Derë Rrëshqitëse", "code": "D-SL", "door_style": "sliding", "base_price_per_sqm": 280.0, "description": "Derë rrëshqitëse"},
-        {"id": str(uuid.uuid4()), "name": "Derë Rrëshqitëse HST", "code": "D-HST", "door_style": "sliding", "base_price_per_sqm": 350.0, "description": "Derë rrëshqitëse HST me ngritje"},
-        {"id": str(uuid.uuid4()), "name": "Derë Palosëse", "code": "D-FOLD", "door_style": "folding", "base_price_per_sqm": 300.0, "description": "Derë palosëse"},
+        # Entrance doors
+        {"id": str(uuid.uuid4()), "name": "Derë Hyrëse me Panel të Plotë", "code": "D-ENT-F", "door_style": "entrance", "glazing": "none", "base_price_per_sqm": 280.0, "description": "Derë hyrëse pa xham"},
+        {"id": str(uuid.uuid4()), "name": "Derë Hyrëse me Xham Sipër", "code": "D-ENT-TG", "door_style": "entrance", "glazing": "top", "base_price_per_sqm": 300.0, "description": "Derë hyrëse me xham në pjesën e sipërme"},
+        {"id": str(uuid.uuid4()), "name": "Derë Hyrëse me Xham në Mes", "code": "D-ENT-MG", "door_style": "entrance", "glazing": "middle", "base_price_per_sqm": 310.0, "description": "Derë hyrëse me xham dekorativ në mes"},
+        {"id": str(uuid.uuid4()), "name": "Derë Hyrëse me Xham të Plotë", "code": "D-ENT-FG", "door_style": "entrance", "glazing": "full", "base_price_per_sqm": 320.0, "description": "Derë hyrëse me xham të plotë"},
+        {"id": str(uuid.uuid4()), "name": "Derë Hyrëse Dyfishe", "code": "D-ENT-D", "door_style": "entrance", "glazing": "mixed", "base_price_per_sqm": 450.0, "description": "Derë hyrëse me dy kanata"},
+        
+        # Balcony doors
+        {"id": str(uuid.uuid4()), "name": "Derë Ballkoni 1 Kanat", "code": "D-BAL-1", "door_style": "balcony", "glazing": "full", "base_price_per_sqm": 180.0, "description": "Derë ballkoni me 1 kanat"},
+        {"id": str(uuid.uuid4()), "name": "Derë Ballkoni 2 Kanata Fikse", "code": "D-BAL-2F", "door_style": "balcony", "glazing": "full", "base_price_per_sqm": 200.0, "description": "Derë ballkoni me 2 kanata fikse"},
+        {"id": str(uuid.uuid4()), "name": "Derë Ballkoni 2 Kanata Hapëse", "code": "D-BAL-2O", "door_style": "balcony", "glazing": "full", "base_price_per_sqm": 280.0, "description": "Derë ballkoni me 2 kanata me hapje"},
+        {"id": str(uuid.uuid4()), "name": "Derë Ballkoni me Fashë Sipër", "code": "D-BAL-T", "door_style": "balcony", "glazing": "full", "base_price_per_sqm": 220.0, "description": "Derë ballkoni me fashë fikse sipër"},
+        
+        # Sliding doors
+        {"id": str(uuid.uuid4()), "name": "Derë Rrëshqitëse 2 Kanata", "code": "D-SL-2", "door_style": "sliding", "glazing": "full", "base_price_per_sqm": 300.0, "description": "Derë rrëshqitëse me 2 kanata"},
+        {"id": str(uuid.uuid4()), "name": "Derë Rrëshqitëse 3 Kanata", "code": "D-SL-3", "door_style": "sliding", "glazing": "full", "base_price_per_sqm": 380.0, "description": "Derë rrëshqitëse me 3 kanata"},
+        {"id": str(uuid.uuid4()), "name": "Derë Rrëshqitëse 4 Kanata", "code": "D-SL-4", "door_style": "sliding", "glazing": "full", "base_price_per_sqm": 450.0, "description": "Derë rrëshqitëse me 4 kanata"},
+        {"id": str(uuid.uuid4()), "name": "Derë HST 2 Kanata", "code": "D-HST-2", "door_style": "hst", "glazing": "full", "base_price_per_sqm": 400.0, "description": "Derë HST me ngritje 2 kanata"},
+        {"id": str(uuid.uuid4()), "name": "Derë HST 3 Kanata", "code": "D-HST-3", "door_style": "hst", "glazing": "full", "base_price_per_sqm": 500.0, "description": "Derë HST me ngritje 3 kanata"},
+        
+        # Folding doors
+        {"id": str(uuid.uuid4()), "name": "Derë Palosëse 2 Kanata", "code": "D-FOLD-2", "door_style": "folding", "glazing": "full", "base_price_per_sqm": 350.0, "description": "Derë palosëse me 2 kanata"},
+        {"id": str(uuid.uuid4()), "name": "Derë Palosëse 3 Kanata", "code": "D-FOLD-3", "door_style": "folding", "glazing": "full", "base_price_per_sqm": 420.0, "description": "Derë palosëse me 3 kanata"},
+        {"id": str(uuid.uuid4()), "name": "Derë Palosëse 4 Kanata", "code": "D-FOLD-4", "door_style": "folding", "glazing": "full", "base_price_per_sqm": 500.0, "description": "Derë palosëse me 4 kanata"},
+        
+        # Interior doors
+        {"id": str(uuid.uuid4()), "name": "Derë e Brendshme Panel", "code": "D-INT-P", "door_style": "interior", "glazing": "none", "base_price_per_sqm": 120.0, "description": "Derë e brendshme me panel"},
+        {"id": str(uuid.uuid4()), "name": "Derë e Brendshme me Xham", "code": "D-INT-G", "door_style": "interior", "glazing": "partial", "base_price_per_sqm": 150.0, "description": "Derë e brendshme me xham"},
+        {"id": str(uuid.uuid4()), "name": "Derë e Brendshme Xham i Plotë", "code": "D-INT-FG", "door_style": "interior", "glazing": "full", "base_price_per_sqm": 180.0, "description": "Derë e brendshme me xham të plotë"},
     ]
     await db.door_types.insert_many(door_types)
     
@@ -1898,12 +1948,12 @@ async def seed_database():
     await db.hardware.insert_many(hardware_data)
     
     # Create admin user
-    admin_exists = await db.users.find_one({"email": "admin@pvcoferta.com"})
+    admin_exists = await db.users.find_one({"email": "admin@smo.al"})
     if not admin_exists:
         admin_user = User(
-            email="admin@pvcoferta.com",
+            email="admin@smo.al",
             password_hash=hash_password("admin123"),
-            company_name="PVC Oferta Admin",
+            company_name="SMO Admin",
             phone="+383 44 000 000",
             is_active=True,
             is_admin=True
