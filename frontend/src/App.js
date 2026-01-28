@@ -240,6 +240,12 @@ const AuthPage = ({ onLogin }) => {
   const [selectedPackage, setSelectedPackage] = useState(1);
   const [showPayment, setShowPayment] = useState(false);
   const [registeredUser, setRegisteredUser] = useState(null);
+  const [onlinePaymentsEnabled, setOnlinePaymentsEnabled] = useState(true);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordStep, setForgotPasswordStep] = useState(1); // 1: email, 2: code+password
+  const [resetCode, setResetCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [displayedResetCode, setDisplayedResetCode] = useState("");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -248,8 +254,14 @@ const AuthPage = ({ onLogin }) => {
   });
 
   useEffect(() => {
-    // Load pricing for registration page
-    axios.get(`${API}/pricing`).then(res => setPricing(res.data)).catch(console.error);
+    // Load pricing and online payments status
+    Promise.all([
+      axios.get(`${API}/pricing`),
+      axios.get(`${API}/settings/online-payments`)
+    ]).then(([pricingRes, onlinePaymentsRes]) => {
+      setPricing(pricingRes.data);
+      setOnlinePaymentsEnabled(onlinePaymentsRes.data.enabled);
+    }).catch(console.error);
     
     // Check if returning from payment
     const urlParams = new URLSearchParams(window.location.search);
@@ -281,6 +293,60 @@ const AuthPage = ({ onLogin }) => {
       }
     } catch (err) {
       console.error("Error checking payment:", err);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!formData.email) {
+      setError("Ju lutem vendosni email-in tuaj.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const response = await axios.post(`${API}/auth/forgot-password`, {
+        email: formData.email
+      });
+      setForgotPasswordStep(2);
+      setSuccess("Kodi i rikthimit u krijua.");
+      // If email wasn't sent, show the code (for testing)
+      if (response.data.reset_code) {
+        setDisplayedResetCode(response.data.reset_code);
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail || "Gabim gjatë kërkimit të kodit.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetCode || !newPassword) {
+      setError("Ju lutem plotësoni të gjitha fushat.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setError("Fjalëkalimi duhet të ketë së paku 6 karaktere.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      await axios.post(`${API}/auth/reset-password`, {
+        email: formData.email,
+        reset_code: resetCode,
+        new_password: newPassword
+      });
+      setSuccess("Fjalëkalimi u rikthye me sukses! Mund të kyçeni tani.");
+      setShowForgotPassword(false);
+      setForgotPasswordStep(1);
+      setResetCode("");
+      setNewPassword("");
+      setDisplayedResetCode("");
+    } catch (err) {
+      setError(err.response?.data?.detail || "Gabim gjatë rikthimit të fjalëkalimit.");
+    } finally {
+      setLoading(false);
     }
   };
 
