@@ -237,6 +237,9 @@ const AuthPage = ({ onLogin }) => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [pricing, setPricing] = useState(null);
+  const [selectedPackage, setSelectedPackage] = useState(1);
+  const [showPayment, setShowPayment] = useState(false);
+  const [registeredUser, setRegisteredUser] = useState(null);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -247,7 +250,56 @@ const AuthPage = ({ onLogin }) => {
   useEffect(() => {
     // Load pricing for registration page
     axios.get(`${API}/pricing`).then(res => setPricing(res.data)).catch(console.error);
+    
+    // Check if returning from payment
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session_id');
+    if (sessionId) {
+      pollPaymentStatus(sessionId);
+    }
   }, []);
+
+  const pollPaymentStatus = async (sessionId, attempts = 0) => {
+    const maxAttempts = 10;
+    if (attempts >= maxAttempts) {
+      setError("Kontrollimi i pagesës dështoi. Ju lutem kontaktoni administratorin.");
+      return;
+    }
+    
+    try {
+      const response = await axios.get(`${API}/payments/status/${sessionId}`);
+      if (response.data.payment_status === "paid") {
+        setSuccess("Pagesa u krye me sukses! Llogaria juaj është aktivizuar. Mund të kyçeni tani.");
+        setShowPayment(false);
+        setIsLogin(true);
+        // Clear URL params
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (response.data.status === "expired") {
+        setError("Sesioni i pagesës ka skaduar. Ju lutem provoni përsëri.");
+      } else {
+        setTimeout(() => pollPaymentStatus(sessionId, attempts + 1), 2000);
+      }
+    } catch (err) {
+      console.error("Error checking payment:", err);
+    }
+  };
+
+  const handlePayment = async (months) => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await axios.post(`${API}/payments/create-checkout`, {
+        package_months: months,
+        origin_url: window.location.origin
+      });
+      
+      // Redirect to Stripe checkout
+      window.location.href = response.data.checkout_url;
+    } catch (err) {
+      setError(err.response?.data?.detail || "Gabim gjatë krijimit të sesionit të pagesës.");
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
