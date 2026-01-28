@@ -336,7 +336,7 @@ const AuthPage = ({ onLogin }) => {
           <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4 text-white">
             <WindowIcon />
           </div>
-          <h1 className="text-2xl font-bold text-gray-800">PVC Oferta</h1>
+          <h1 className="text-2xl font-bold text-gray-800">SMO</h1>
           <p className="text-gray-500">Sistemi i Menaxhimit të Ofertave</p>
         </div>
 
