@@ -1846,7 +1846,7 @@ const AppContent = ({ user, api, onLogout }) => {
         <div className="p-6">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-blue-900"><WindowIcon /></div>
-            <div><h1 className="text-xl font-bold">PVC Oferta</h1><p className="text-xs text-blue-200">Sistemi i Ofertave</p></div>
+            <div><h1 className="text-xl font-bold">SMO</h1><p className="text-xs text-blue-200">Sistemi i Menaxhimit të Ofertave</p></div>
           </div>
           <div className="bg-blue-700 rounded-lg p-3 mb-6"><p className="font-medium text-sm">{user.company_name}</p><p className="text-xs text-blue-200">{user.email}</p></div>
           <nav className="space-y-2">
