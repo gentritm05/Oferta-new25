@@ -443,6 +443,16 @@ const AuthPage = ({ onLogin }) => {
               placeholder="••••••••"
               data-testid="password-input"
             />
+            {isLogin && (
+              <button
+                type="button"
+                onClick={() => { setShowForgotPassword(true); setError(""); setSuccess(""); }}
+                className="text-sm text-blue-600 hover:text-blue-700 mt-1"
+                data-testid="forgot-password-link"
+              >
+                Harrova fjalëkalimin?
+              </button>
+            )}
           </div>
 
           {!isLogin && (
