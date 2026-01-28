@@ -514,20 +514,23 @@ const AdminPanel = ({ api, onLogout }) => {
   const [savingPrice, setSavingPrice] = useState(false);
   const [payments, setPayments] = useState([]);
   const [activeTab, setActiveTab] = useState("users");
+  const [onlinePaymentsEnabled, setOnlinePaymentsEnabled] = useState(true);
 
   const loadData = useCallback(async () => {
     try {
-      const [usersRes, statsRes, pricingRes, paymentsRes] = await Promise.all([
+      const [usersRes, statsRes, pricingRes, paymentsRes, onlinePaymentsRes] = await Promise.all([
         api.get("/admin/users"),
         api.get("/admin/stats"),
         api.get("/pricing"),
-        api.get("/admin/payments")
+        api.get("/admin/payments"),
+        axios.get(`${API}/settings/online-payments`)
       ]);
       setUsers(usersRes.data);
       setStats(statsRes.data);
       setPricing(pricingRes.data);
       setNewPrice(pricingRes.data.monthly_price.toString());
       setPayments(paymentsRes.data);
+      setOnlinePaymentsEnabled(onlinePaymentsRes.data.enabled);
     } catch (error) {
       console.error("Error loading admin data:", error);
     } finally {
@@ -550,6 +553,19 @@ const AdminPanel = ({ api, onLogout }) => {
     } catch (error) {
       console.error("Error activating user:", error);
       alert("Gabim gjatë aktivizimit!");
+    }
+  };
+
+  const handleToggleOnlinePayments = async () => {
+    try {
+      const response = await api.put("/admin/settings/online-payments", {
+        enabled: !onlinePaymentsEnabled
+      });
+      setOnlinePaymentsEnabled(response.data.enabled);
+      alert(response.data.message);
+    } catch (error) {
+      console.error("Error toggling online payments:", error);
+      alert("Gabim gjatë ndryshimit!");
     }
   };
 
