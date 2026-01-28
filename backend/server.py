@@ -693,6 +693,29 @@ async def update_pricing(input: PricingUpdate, admin: dict = Depends(get_admin_u
     }
 
 
+# ==================== ONLINE PAYMENTS SETTINGS ====================
+
+class OnlinePaymentsToggle(BaseModel):
+    enabled: bool
+
+@api_router.get("/settings/online-payments")
+async def get_online_payments_setting():
+    """Get online payments status - public"""
+    settings = await db.settings.find_one({"key": "online_payments"})
+    return {"enabled": settings.get("enabled", True) if settings else True}
+
+@api_router.put("/admin/settings/online-payments")
+async def toggle_online_payments(input: OnlinePaymentsToggle, admin: dict = Depends(get_admin_user)):
+    """Enable/disable online payments - admin only"""
+    await db.settings.update_one(
+        {"key": "online_payments"},
+        {"$set": {"enabled": input.enabled}},
+        upsert=True
+    )
+    status = "aktivizuar" if input.enabled else "çaktivizuar"
+    return {"enabled": input.enabled, "message": f"Pagesat online u {status}"}
+
+
 # ==================== ADMIN ROUTES ====================
 
 @api_router.get("/admin/users")
