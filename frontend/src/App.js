@@ -676,10 +676,6 @@ const AuthPage = ({ onLogin }) => {
                 </p>
               </div>
             )}
-            
-            <p className="text-xs text-center text-gray-500 mt-3">
-              Ose, regjistrohuni dhe administratori do t'ju aktivizojë manualisht.
-            </p>
           </div>
         )}
       </div>
