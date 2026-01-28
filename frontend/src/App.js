@@ -1835,7 +1835,7 @@ const AppContent = ({ user, api, onLogout }) => {
       <div className="lg:hidden fixed top-0 left-0 right-0 bg-white shadow-md z-40">
         <div className="flex items-center justify-between px-4 py-3">
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-gray-600"><MenuIcon /></button>
-          <h1 className="text-lg font-bold text-blue-800">PVC Oferta</h1>
+          <h1 className="text-lg font-bold text-blue-800">SMO</h1>
           <div className="w-6"></div>
         </div>
       </div>
