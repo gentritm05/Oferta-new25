@@ -681,7 +681,29 @@ const AdminPanel = ({ api, onLogout }) => {
           </div>
         </div>
 
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab("users")}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === "users" ? "bg-blue-600 text-white" : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            Përdoruesit
+          </button>
+          <button
+            onClick={() => setActiveTab("payments")}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === "payments" ? "bg-blue-600 text-white" : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
+            data-testid="payments-tab"
+          >
+            Historiku i Pagesave
+          </button>
+        </div>
+
         {/* Users List */}
+        {activeTab === "users" && (
         <div className="bg-white rounded-xl shadow-sm">
           <div className="p-4 border-b">
             <h2 className="text-lg font-semibold">Përdoruesit</h2>
@@ -750,6 +772,55 @@ const AdminPanel = ({ api, onLogout }) => {
             </div>
           )}
         </div>
+        )}
+
+        {/* Payments History */}
+        {activeTab === "payments" && (
+        <div className="bg-white rounded-xl shadow-sm" data-testid="payments-history">
+          <div className="p-4 border-b">
+            <h2 className="text-lg font-semibold">Historiku i Pagesave</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Data</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Email</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Paketa</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Shuma</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Statusi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map((payment) => (
+                  <tr key={payment.id} className="border-b hover:bg-gray-50">
+                    <td className="px-4 py-3 text-gray-600">
+                      {new Date(payment.created_at).toLocaleDateString("sq-AL")} {new Date(payment.created_at).toLocaleTimeString("sq-AL", {hour: '2-digit', minute: '2-digit'})}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">{payment.user_email || "-"}</td>
+                    <td className="px-4 py-3 font-medium">{payment.package_months} muaj</td>
+                    <td className="px-4 py-3 font-bold text-blue-600">{payment.amount}€</td>
+                    <td className="px-4 py-3">
+                      {payment.payment_status === "paid" ? (
+                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Paguar</span>
+                      ) : payment.payment_status === "pending" ? (
+                        <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-medium">Në pritje</span>
+                      ) : (
+                        <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">{payment.payment_status}</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {payments.length === 0 && (
+            <div className="p-8 text-center text-gray-500">
+              Nuk ka pagesa të regjistruara ende
+            </div>
+          )}
+        </div>
+        )}
 
         {/* Activation Modal */}
         {activatingUser && (
