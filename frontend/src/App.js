@@ -512,18 +512,22 @@ const AdminPanel = ({ api, onLogout }) => {
   const [pricing, setPricing] = useState(null);
   const [newPrice, setNewPrice] = useState("");
   const [savingPrice, setSavingPrice] = useState(false);
+  const [payments, setPayments] = useState([]);
+  const [activeTab, setActiveTab] = useState("users");
 
   const loadData = useCallback(async () => {
     try {
-      const [usersRes, statsRes, pricingRes] = await Promise.all([
+      const [usersRes, statsRes, pricingRes, paymentsRes] = await Promise.all([
         api.get("/admin/users"),
         api.get("/admin/stats"),
-        api.get("/pricing")
+        api.get("/pricing"),
+        api.get("/admin/payments")
       ]);
       setUsers(usersRes.data);
       setStats(statsRes.data);
       setPricing(pricingRes.data);
       setNewPrice(pricingRes.data.monthly_price.toString());
+      setPayments(paymentsRes.data);
     } catch (error) {
       console.error("Error loading admin data:", error);
     } finally {
