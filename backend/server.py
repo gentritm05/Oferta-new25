@@ -5,8 +5,11 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+import asyncio
+import random
+import string
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional, Dict
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -20,6 +23,13 @@ from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 import jwt
 import bcrypt
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
+
+# Try to import resend for email
+try:
+    import resend
+    RESEND_AVAILABLE = True
+except ImportError:
+    RESEND_AVAILABLE = False
 
 
 ROOT_DIR = Path(__file__).parent
