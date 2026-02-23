@@ -608,6 +608,23 @@ const AuthPage = ({ onLogin }) => {
           </button>
         </form>
 
+        {isLogin && (
+          <div className="mt-4">
+            <div className="relative flex items-center justify-center">
+              <div className="border-t border-gray-200 flex-grow"></div>
+              <span className="px-3 text-xs text-gray-400 bg-white">ose</span>
+              <div className="border-t border-gray-200 flex-grow"></div>
+            </div>
+            <button
+              onClick={() => setShowClientAccess(true)}
+              className="mt-4 w-full py-3 border-2 border-blue-200 text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+              data-testid="client-access-btn"
+            >
+              <KeyIcon /> Qasje me Kod (Klient)
+            </button>
+          </div>
+        )}
+
         <div className="mt-6 text-center">
           <button
             onClick={() => { setIsLogin(!isLogin); setError(""); setSuccess(""); }}
