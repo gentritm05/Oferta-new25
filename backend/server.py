@@ -243,6 +243,31 @@ class CustomerCreate(BaseModel):
     city: str
     discount_percent: float = 0.0
 
+
+# Client Access Code - for direct access without login
+class ClientAccess(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str  # Owner company
+    access_code: str  # Unique code like "HAP123"
+    client_name: str
+    client_phone: Optional[str] = None
+    client_email: Optional[str] = None
+    is_active: bool = True
+    expires_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    last_access: Optional[datetime] = None
+
+class ClientAccessCreate(BaseModel):
+    client_name: str
+    client_phone: Optional[str] = None
+    client_email: Optional[str] = None
+    expires_days: Optional[int] = None  # None = never expires
+
+class ClientAccessVerify(BaseModel):
+    access_code: str
+
+
 # Offer Item
 class OfferItem(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
