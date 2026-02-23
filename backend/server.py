@@ -810,6 +810,152 @@ async def get_admin_stats(admin: dict = Depends(get_admin_user)):
     }
 
 
+# ==================== CLIENT ACCESS SYSTEM ====================
+
+def generate_access_code():
+    """Generate unique access code like SMO-A1B2C3"""
+    chars = string.ascii_uppercase + string.digits
+    code = ''.join(random.choices(chars, k=6))
+    return f"SMO-{code}"
+
+@api_router.post("/client-access/create")
+async def create_client_access(input: ClientAccessCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new client access code - for logged in users"""
+    # Generate unique code
+    access_code = generate_access_code()
+    while await db.client_access.find_one({"access_code": access_code}):
+        access_code = generate_access_code()
+    
+    # Calculate expiration
+    expires_at = None
+    if input.expires_days:
+        expires_at = datetime.now(timezone.utc) + timedelta(days=input.expires_days)
+    
+    client_access = ClientAccess(
+        company_id=current_user.get("company_id", current_user["id"]),
+        access_code=access_code,
+        client_name=input.client_name,
+        client_phone=input.client_phone,
+        client_email=input.client_email,
+        expires_at=expires_at
+    )
+    
+    doc = client_access.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    if doc['expires_at']:
+        doc['expires_at'] = doc['expires_at'].isoformat()
+    
+    await db.client_access.insert_one(doc)
+    
+    return {
+        "id": client_access.id,
+        "access_code": access_code,
+        "client_name": input.client_name,
+        "expires_at": doc['expires_at'],
+        "access_link": f"?code={access_code}"
+    }
+
+@api_router.get("/client-access")
+async def get_client_access_codes(current_user: dict = Depends(get_current_user)):
+    """Get all client access codes for current user's company"""
+    company_id = current_user.get("company_id", current_user["id"])
+    codes = await db.client_access.find(
+        {"company_id": company_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(1000)
+    return codes
+
+@api_router.put("/client-access/{access_id}/toggle")
+async def toggle_client_access(access_id: str, current_user: dict = Depends(get_current_user)):
+    """Activate/deactivate client access"""
+    company_id = current_user.get("company_id", current_user["id"])
+    access = await db.client_access.find_one({"id": access_id, "company_id": company_id})
+    
+    if not access:
+        raise HTTPException(status_code=404, detail="Kodi nuk u gjet")
+    
+    new_status = not access.get("is_active", True)
+    await db.client_access.update_one(
+        {"id": access_id},
+        {"$set": {"is_active": new_status}}
+    )
+    
+    status = "aktivizuar" if new_status else "çaktivizuar"
+    return {"is_active": new_status, "message": f"Qasja u {status}"}
+
+@api_router.delete("/client-access/{access_id}")
+async def delete_client_access(access_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete client access code"""
+    company_id = current_user.get("company_id", current_user["id"])
+    result = await db.client_access.delete_one({"id": access_id, "company_id": company_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Kodi nuk u gjet")
+    
+    return {"message": "Kodi u fshi me sukses"}
+
+@api_router.post("/client-access/verify")
+async def verify_client_access(input: ClientAccessVerify):
+    """Verify client access code - public endpoint"""
+    access = await db.client_access.find_one(
+        {"access_code": input.access_code.upper()},
+        {"_id": 0}
+    )
+    
+    if not access:
+        raise HTTPException(status_code=404, detail="Kodi i qasjes nuk ekziston")
+    
+    if not access.get("is_active", True):
+        raise HTTPException(status_code=403, detail="Kodi i qasjes është çaktivizuar")
+    
+    # Check expiration
+    if access.get("expires_at"):
+        expires_at = datetime.fromisoformat(access["expires_at"]) if isinstance(access["expires_at"], str) else access["expires_at"]
+        if expires_at < datetime.now(timezone.utc):
+            raise HTTPException(status_code=403, detail="Kodi i qasjes ka skaduar")
+    
+    # Update last access
+    await db.client_access.update_one(
+        {"access_code": input.access_code.upper()},
+        {"$set": {"last_access": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {
+        "valid": True,
+        "client_name": access["client_name"],
+        "company_id": access["company_id"],
+        "access_code": access["access_code"]
+    }
+
+@api_router.get("/client-access/{access_code}/offers")
+async def get_client_offers(access_code: str):
+    """Get offers for a specific client - public endpoint with access code"""
+    # First verify the access code
+    access = await db.client_access.find_one({"access_code": access_code.upper()})
+    
+    if not access:
+        raise HTTPException(status_code=404, detail="Kodi i qasjes nuk ekziston")
+    
+    if not access.get("is_active", True):
+        raise HTTPException(status_code=403, detail="Kodi i qasjes është çaktivizuar")
+    
+    if access.get("expires_at"):
+        expires_at = datetime.fromisoformat(access["expires_at"]) if isinstance(access["expires_at"], str) else access["expires_at"]
+        if expires_at < datetime.now(timezone.utc):
+            raise HTTPException(status_code=403, detail="Kodi i qasjes ka skaduar")
+    
+    # Get offers linked to this access code
+    offers = await db.offers.find(
+        {"client_access_code": access_code.upper()},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    return {
+        "client_name": access["client_name"],
+        "offers": offers
+    }
+
+
 # ==================== PUBLIC ROUTES ====================
 
 @api_router.get("/")
