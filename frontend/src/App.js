@@ -695,6 +695,146 @@ const AuthPage = ({ onLogin }) => {
   );
 };
 
+// Client Portal Component - For clients accessing with code
+const ClientPortal = ({ clientData, onLogout }) => {
+  const [offers, setOffers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadOffers = async () => {
+      try {
+        const response = await axios.get(`${API}/client-access/${clientData.access_code}/offers`);
+        setOffers(response.data.offers || []);
+      } catch (error) {
+        console.error("Error loading offers:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadOffers();
+  }, [clientData.access_code]);
+
+  const handleDownloadPdf = async (offerId) => {
+    try {
+      const response = await axios.get(`${API}/offers/${offerId}/pdf?access_code=${clientData.access_code}`, { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `Oferta_${offerId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      alert("Gabim gjatë shkarkimit!");
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    const styles = {
+      draft: "bg-gray-100 text-gray-800",
+      sent: "bg-blue-100 text-blue-800",
+      accepted: "bg-green-100 text-green-800",
+      rejected: "bg-red-100 text-red-800"
+    };
+    const labels = { draft: "Draft", sent: "Dërguar", accepted: "Pranuar", rejected: "Refuzuar" };
+    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || styles.draft}`}>{labels[status] || status}</span>;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900" data-testid="client-portal">
+      <div className="max-w-4xl mx-auto p-4 sm:p-8">
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white">
+                <WindowIcon />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-800">SMO - Portali i Klientit</h1>
+                <p className="text-sm text-gray-500">Mirë se vini, {clientData.client_name}</p>
+              </div>
+            </div>
+            <button
+              onClick={onLogout}
+              className="px-4 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              Dilni
+            </button>
+          </div>
+        </div>
+
+        {/* Offers */}
+        <div className="bg-white rounded-2xl shadow-xl p-6">
+          <h2 className="text-lg font-semibold mb-4">Ofertat Tuaja</h2>
+          
+          {offers.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <FileTextIcon />
+              <p className="mt-2">Nuk keni oferta ende</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {offers.map((offer) => (
+                <div key={offer.id} className="border rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold text-blue-600">Oferta #{offer.offer_number}</span>
+                      {getStatusBadge(offer.status)}
+                    </div>
+                    <span className="text-sm text-gray-500">
+                      {new Date(offer.created_at).toLocaleDateString("sq-AL")}
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm mb-4">
+                    <div>
+                      <span className="text-gray-500">Artikuj:</span>
+                      <span className="ml-1 font-medium">{offer.items?.length || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Nëntotal:</span>
+                      <span className="ml-1 font-medium">{offer.subtotal?.toFixed(2)}€</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">TVSH:</span>
+                      <span className="ml-1 font-medium">{offer.vat_amount?.toFixed(2)}€</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 font-bold">Total:</span>
+                      <span className="ml-1 font-bold text-blue-600">{offer.total?.toFixed(2)}€</span>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={() => handleDownloadPdf(offer.id)}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <DownloadIcon /> Shkarko PDF
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-6 text-blue-200 text-sm">
+          <p>SMO - Sistemi i Menaxhimit të Ofertave</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Admin Panel Component
 const AdminPanel = ({ api, onLogout }) => {
   const [users, setUsers] = useState([]);
