@@ -242,471 +242,187 @@ const DoorVisual = ({ type, width = 80, height = 120, color = "#8B4513" }) => {
   );
 };
 
-// Login/Register Component
-const AuthPage = ({ onLogin }) => {
-  const [isLogin, setIsLogin] = useState(true);
+
+// Client Access Page - Simple code-based access
+const AuthPage = ({ onLogin, onClientAccess }) => {
+  const [accessCode, setAccessCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [pricing, setPricing] = useState(null);
-  const [selectedPackage, setSelectedPackage] = useState(1);
-  const [showPayment, setShowPayment] = useState(false);
-  const [registeredUser, setRegisteredUser] = useState(null);
-  const [onlinePaymentsEnabled, setOnlinePaymentsEnabled] = useState(true);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [forgotPasswordStep, setForgotPasswordStep] = useState(1); // 1: email, 2: code+password
-  const [resetCode, setResetCode] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [displayedResetCode, setDisplayedResetCode] = useState("");
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    company_name: "",
-    phone: ""
-  });
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
 
   useEffect(() => {
-    // Load pricing and online payments status
-    Promise.all([
-      axios.get(`${API}/pricing`),
-      axios.get(`${API}/settings/online-payments`)
-    ]).then(([pricingRes, onlinePaymentsRes]) => {
-      setPricing(pricingRes.data);
-      setOnlinePaymentsEnabled(onlinePaymentsRes.data.enabled);
-    }).catch(console.error);
-    
-    // Check if returning from payment
+    // Check URL for access code
     const urlParams = new URLSearchParams(window.location.search);
-    const sessionId = urlParams.get('session_id');
-    if (sessionId) {
-      pollPaymentStatus(sessionId);
+    const code = urlParams.get('code');
+    if (code) {
+      setAccessCode(code);
+      handleClientAccess(code);
     }
   }, []);
 
-  const pollPaymentStatus = async (sessionId, attempts = 0) => {
-    const maxAttempts = 10;
-    if (attempts >= maxAttempts) {
-      setError("Kontrollimi i pagesës dështoi. Ju lutem kontaktoni administratorin.");
-      return;
-    }
-    
-    try {
-      const response = await axios.get(`${API}/payments/status/${sessionId}`);
-      if (response.data.payment_status === "paid") {
-        setSuccess("Pagesa u krye me sukses! Llogaria juaj është aktivizuar. Mund të kyçeni tani.");
-        setShowPayment(false);
-        setIsLogin(true);
-        // Clear URL params
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } else if (response.data.status === "expired") {
-        setError("Sesioni i pagesës ka skaduar. Ju lutem provoni përsëri.");
-      } else {
-        setTimeout(() => pollPaymentStatus(sessionId, attempts + 1), 2000);
-      }
-    } catch (err) {
-      console.error("Error checking payment:", err);
-    }
-  };
-
-  const handleForgotPassword = async () => {
-    if (!formData.email) {
-      setError("Ju lutem vendosni email-in tuaj.");
+  const handleClientAccess = async (code = accessCode) => {
+    if (!code.trim()) {
+      setError("Ju lutem vendosni kodin e qasjes");
       return;
     }
     setLoading(true);
     setError("");
     try {
-      const response = await axios.post(`${API}/auth/forgot-password`, {
-        email: formData.email
+      const response = await axios.post(`${API}/client-access/verify`, {
+        access_code: code.trim().toUpperCase()
       });
-      setForgotPasswordStep(2);
-      setSuccess("Kodi i rikthimit u krijua.");
-      // If email wasn't sent, show the code (for testing)
-      if (response.data.reset_code) {
-        setDisplayedResetCode(response.data.reset_code);
+      if (response.data.valid) {
+        onClientAccess(response.data);
       }
     } catch (err) {
-      setError(err.response?.data?.detail || "Gabim gjatë kërkimit të kodit.");
+      setError(err.response?.data?.detail || "Kodi i qasjes nuk është valid");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResetPassword = async () => {
-    if (!resetCode || !newPassword) {
-      setError("Ju lutem plotësoni të gjitha fushat.");
-      return;
-    }
-    if (newPassword.length < 6) {
-      setError("Fjalëkalimi duhet të ketë së paku 6 karaktere.");
-      return;
-    }
-    setLoading(true);
-    setError("");
-    try {
-      await axios.post(`${API}/auth/reset-password`, {
-        email: formData.email,
-        reset_code: resetCode,
-        new_password: newPassword
-      });
-      setSuccess("Fjalëkalimi u rikthye me sukses! Mund të kyçeni tani.");
-      setShowForgotPassword(false);
-      setForgotPasswordStep(1);
-      setResetCode("");
-      setNewPassword("");
-      setDisplayedResetCode("");
-    } catch (err) {
-      setError(err.response?.data?.detail || "Gabim gjatë rikthimit të fjalëkalimit.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePayment = async (months) => {
-    setLoading(true);
-    setError("");
-    try {
-      const response = await axios.post(`${API}/payments/create-checkout`, {
-        package_months: months,
-        origin_url: window.location.origin
-      });
-      
-      // Redirect to Stripe checkout
-      window.location.href = response.data.checkout_url;
-    } catch (err) {
-      setError(err.response?.data?.detail || "Gabim gjatë krijimit të sesionit të pagesës.");
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e) => {
+  const handleAdminLogin = async (e) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
     setLoading(true);
-
+    setError("");
     try {
-      if (isLogin) {
-        const response = await axios.post(`${API}/auth/login`, {
-          email: formData.email,
-          password: formData.password
-        });
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-        onLogin(response.data.user, response.data.token);
-      } else {
-        await axios.post(`${API}/auth/register`, formData);
-        setSuccess("Regjistrimi u krye me sukses! Ju lutem prisni që administratori të aktivizojë llogarinë tuaj.");
-        setIsLogin(true);
-        setFormData({ ...formData, password: "" });
-      }
+      const response = await axios.post(`${API}/auth/login`, {
+        email: adminEmail,
+        password: adminPassword
+      });
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+      onLogin(response.data.user, response.data.token);
     } catch (err) {
-      setError(err.response?.data?.detail || "Ndodhi një gabim. Ju lutem provoni përsëri.");
+      setError(err.response?.data?.detail || "Kredencialet janë të gabuara");
     } finally {
       setLoading(false);
     }
   };
 
-  // Forgot Password Modal
-  if (showForgotPassword) {
+  // Admin Login Modal
+  if (showAdminLogin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4" data-testid="forgot-password-page">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4 text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><circle cx="12" cy="16" r="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <div className="w-16 h-16 bg-gray-800 rounded-xl flex items-center justify-center mx-auto mb-4 text-white">
+              <SettingsIcon />
             </div>
-            <h1 className="text-2xl font-bold text-gray-800">Rikthe Fjalëkalimin</h1>
-            <p className="text-gray-500">{forgotPasswordStep === 1 ? "Vendosni email-in tuaj" : "Vendosni kodin dhe fjalëkalimin e ri"}</p>
+            <h1 className="text-2xl font-bold text-gray-800">Admin Panel</h1>
+            <p className="text-gray-500">Qasje për administratorë</p>
           </div>
 
-          {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm">{error}</div>
-          )}
+          {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm">{error}</div>}
 
-          {success && (
-            <div className="bg-green-50 text-green-600 p-3 rounded-lg mb-4 text-sm">{success}</div>
-          )}
-
-          {displayedResetCode && (
-            <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg mb-4 text-center">
-              <p className="text-xs mb-1">Kodi i rikthimit (për testim):</p>
-              <p className="text-2xl font-bold tracking-widest">{displayedResetCode}</p>
+          <form onSubmit={handleAdminLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input
+                type="email"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
+                placeholder="admin@smo.al"
+                required
+              />
             </div>
-          )}
-
-          <div className="space-y-4">
-            {forgotPasswordStep === 1 && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="email@kompania.com"
-                    data-testid="forgot-email-input"
-                  />
-                </div>
-                <button
-                  onClick={handleForgotPassword}
-                  disabled={loading}
-                  className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                  data-testid="send-code-btn"
-                >
-                  {loading ? "Duke dërguar..." : "Dërgo Kodin"}
-                </button>
-              </>
-            )}
-
-            {forgotPasswordStep === 2 && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Kodi i Rikthimit</label>
-                  <input
-                    type="text"
-                    value={resetCode}
-                    onChange={(e) => setResetCode(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-xl tracking-widest"
-                    placeholder="000000"
-                    maxLength={6}
-                    data-testid="reset-code-input"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fjalëkalimi i Ri</label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="••••••••"
-                    data-testid="new-password-input"
-                  />
-                </div>
-                <button
-                  onClick={handleResetPassword}
-                  disabled={loading}
-                  className="w-full py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
-                  data-testid="reset-password-btn"
-                >
-                  {loading ? "Duke ruajtur..." : "Rikthe Fjalëkalimin"}
-                </button>
-              </>
-            )}
-
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fjalëkalimi</label>
+              <input
+                type="password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500"
+                placeholder="••••••••"
+                required
+              />
+            </div>
             <button
-              onClick={() => { setShowForgotPassword(false); setForgotPasswordStep(1); setError(""); setSuccess(""); setDisplayedResetCode(""); }}
-              className="w-full py-2 text-gray-600 hover:text-gray-800 text-sm"
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 disabled:opacity-50"
             >
-              ← Kthehu te Kyçja
+              {loading ? "Duke u kyçur..." : "Kyçu si Admin"}
             </button>
-          </div>
+          </form>
+
+          <button
+            onClick={() => setShowAdminLogin(false)}
+            className="w-full mt-4 py-2 text-gray-600 hover:text-gray-800 text-sm"
+          >
+            ← Kthehu
+          </button>
         </div>
       </div>
     );
   }
 
+  // Main Client Access Page
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4" data-testid="auth-page">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4 text-white">
+          <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white">
             <WindowIcon />
           </div>
-          <h1 className="text-2xl font-bold text-gray-800">SMO</h1>
+          <h1 className="text-3xl font-bold text-gray-800">SMO</h1>
           <p className="text-gray-500">Sistemi i Menaxhimit të Ofertave</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm">
-            {error}
-          </div>
+          <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm">{error}</div>
         )}
 
-        {success && (
-          <div className="bg-green-50 text-green-600 p-3 rounded-lg mb-4 text-sm">
-            {success}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Kodi i Qasjes</label>
             <input
-              type="email"
-              required
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="email@kompania.com"
-              data-testid="email-input"
+              type="text"
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+              className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-2xl tracking-widest font-mono"
+              placeholder="SMO-XXXXXX"
+              data-testid="access-code-input"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fjalëkalimi</label>
-            <input
-              type="password"
-              required
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="••••••••"
-              data-testid="password-input"
-            />
-            {isLogin && (
-              <button
-                type="button"
-                onClick={() => { setShowForgotPassword(true); setError(""); setSuccess(""); }}
-                className="text-sm text-blue-600 hover:text-blue-700 mt-1"
-                data-testid="forgot-password-link"
-              >
-                Harrova fjalëkalimin?
-              </button>
+          <button
+            onClick={() => handleClientAccess()}
+            disabled={loading || !accessCode.trim()}
+            className="w-full py-4 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 text-lg"
+            data-testid="access-btn"
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                Duke verifikuar...
+              </>
+            ) : (
+              <>
+                <KeyIcon /> Hyr me Kod
+              </>
             )}
-          </div>
-
-          {!isLogin && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Emri i Kompanisë</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.company_name}
-                  onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Kompania juaj"
-                  data-testid="company-input"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Telefoni</label>
-                <input
-                  type="tel"
-                  required
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="+383 44 123 456"
-                  data-testid="phone-input"
-                />
-              </div>
-            </>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            data-testid="submit-btn"
-          >
-            {loading ? "Duke procesuar..." : isLogin ? "Kyçu" : "Regjistrohu"}
-          </button>
-        </form>
-
-        {isLogin && (
-          <div className="mt-4">
-            <div className="relative flex items-center justify-center">
-              <div className="border-t border-gray-200 flex-grow"></div>
-              <span className="px-3 text-xs text-gray-400 bg-white">ose</span>
-              <div className="border-t border-gray-200 flex-grow"></div>
-            </div>
-            <button
-              onClick={() => setShowClientAccess(true)}
-              className="mt-4 w-full py-3 border-2 border-blue-200 text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
-              data-testid="client-access-btn"
-            >
-              <KeyIcon /> Qasje me Kod (Klient)
-            </button>
-          </div>
-        )}
-
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => { setIsLogin(!isLogin); setError(""); setSuccess(""); }}
-            className="text-blue-600 hover:text-blue-700 text-sm"
-          >
-            {isLogin ? "Nuk keni llogari? Regjistrohuni" : "Keni llogari? Kyçuni"}
           </button>
         </div>
 
-        {!isLogin && (
-          <div className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200" data-testid="pricing-info">
-            <h3 className="font-semibold text-blue-800 mb-3">Paketat e Abonimit</h3>
-            {pricing?.packages ? (
-              <div className="grid grid-cols-2 gap-2">
-                {pricing.packages.map((pkg) => (
-                  <button
-                    key={pkg.months}
-                    onClick={() => setSelectedPackage(pkg.months)}
-                    className={`p-3 rounded-lg text-center shadow-sm transition-all cursor-pointer ${
-                      selectedPackage === pkg.months 
-                        ? "bg-blue-600 text-white ring-2 ring-blue-400" 
-                        : "bg-white hover:bg-blue-50"
-                    }`}
-                    data-testid={`package-${pkg.months}`}
-                  >
-                    <div className={`text-xs ${selectedPackage === pkg.months ? "text-blue-100" : "text-gray-500"}`}>
-                      {pkg.months} muaj
-                    </div>
-                    <div className={`font-bold ${selectedPackage === pkg.months ? "text-white" : "text-blue-600"}`}>
-                      {pkg.price.toFixed(2)}€
-                    </div>
-                    {pkg.discount > 0 && (
-                      <span className={`text-xs px-1 rounded ${
-                        selectedPackage === pkg.months ? "bg-green-400 text-green-900" : "bg-green-100 text-green-700"
-                      }`}>
-                        -{pkg.discount}%
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-blue-800">Duke ngarkuar çmimet...</p>
-            )}
-            
-            {onlinePaymentsEnabled ? (
-              <div className="mt-4 pt-4 border-t border-blue-200">
-                <p className="text-xs text-gray-600 mb-3">
-                  Pas regjistrimit, zgjidhni paketën dhe paguani online për aktivizim automatik.
-                </p>
-                <button
-                  onClick={() => handlePayment(selectedPackage)}
-                  disabled={loading}
-                  className="w-full py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
-                  data-testid="pay-now-btn"
-                >
-                  {loading ? (
-                    "Duke procesuar..."
-                  ) : (
-                    <>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                      Paguaj {pricing?.packages?.find(p => p.months === selectedPackage)?.price?.toFixed(2) || ""}€ Online
-                    </>
-                  )}
-                </button>
-                <div className="flex justify-center gap-2 mt-2">
-                  <span className="text-xs text-gray-400">Visa</span>
-                  <span className="text-xs text-gray-400">•</span>
-                  <span className="text-xs text-gray-400">Mastercard</span>
-                  <span className="text-xs text-gray-400">•</span>
-                  <span className="text-xs text-gray-400">Apple Pay</span>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-4 pt-4 border-t border-blue-200">
-                <p className="text-xs text-gray-600">
-                  Pas regjistrimit, administratori do t'ju aktivizojë llogarinë pasi të konfirmojë pagesën.
-                </p>
-              </div>
-            )}
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <p className="text-center text-gray-500 text-sm mb-4">
+            Nuk keni kod? Kontaktoni kompaninë që ju ka dërguar ofertën.
+          </p>
+          
+          {/* Hidden admin access - double click on logo */}
+          <div className="text-center">
+            <button
+              onDoubleClick={() => setShowAdminLogin(true)}
+              className="text-xs text-gray-300 hover:text-gray-500 cursor-default"
+            >
+              © SMO 2026
+            </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
