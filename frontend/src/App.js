@@ -1971,6 +1971,7 @@ const AppContent = ({ user, api, onLogout }) => {
       <main className="lg:ml-64 pt-16 lg:pt-0">
         <div className="p-4 lg:p-8">
           {currentPage === "dashboard" && <Dashboard stats={stats} onNavigate={navigate} />}
+          {currentPage === "client-codes" && <ClientCodesPage api={api} />}
           {currentPage === "products" && <ProductManagement api={api} windowTypes={windowTypes} doorTypes={doorTypes} profiles={profiles} glassTypes={glassTypes} colors={colors} hardware={hardware} onReload={loadData} />}
           {currentPage === "catalog" && <ProductCatalog windowTypes={windowTypes} doorTypes={doorTypes} profiles={profiles} glassTypes={glassTypes} colors={colors} hardware={hardware} />}
           {currentPage === "customers" && <Customers customers={customers} onAdd={handleAddCustomer} onEdit={handleEditCustomer} onDelete={handleDeleteCustomer} initialAction={pageParams.action} />}
