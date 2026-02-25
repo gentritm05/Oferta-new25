@@ -1984,22 +1984,59 @@ const AppContent = ({ user, api, onLogout }) => {
 function App() {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
+  const [clientData, setClientData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check for stored login
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
-    if (storedToken && storedUser) { setToken(storedToken); setUser(JSON.parse(storedUser)); }
+    const storedClient = localStorage.getItem("clientAccess");
+    
+    if (storedToken && storedUser) { 
+      setToken(storedToken); 
+      setUser(JSON.parse(storedUser)); 
+    } else if (storedClient) {
+      setClientData(JSON.parse(storedClient));
+    }
+    
     setLoading(false);
     axios.post(`${API}/seed`).catch(() => {});
   }, []);
 
-  const handleLogin = (userData, authToken) => { setUser(userData); setToken(authToken); };
-  const handleLogout = () => { localStorage.removeItem("token"); localStorage.removeItem("user"); setUser(null); setToken(null); };
+  const handleLogin = (userData, authToken) => { 
+    setUser(userData); 
+    setToken(authToken); 
+    setClientData(null);
+  };
+  
+  const handleClientAccess = (data) => {
+    localStorage.setItem("clientAccess", JSON.stringify(data));
+    setClientData(data);
+    setUser(null);
+    setToken(null);
+    // Clear URL params
+    window.history.replaceState({}, document.title, window.location.pathname);
+  };
+  
+  const handleLogout = () => { 
+    localStorage.removeItem("token"); 
+    localStorage.removeItem("user"); 
+    localStorage.removeItem("clientAccess");
+    setUser(null); 
+    setToken(null); 
+    setClientData(null);
+  };
 
   if (loading) return <div className="min-h-screen bg-gray-100 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
-  if (!user || !token) return <AuthPage onLogin={handleLogin} />;
+  
+  // Client Portal - accessed with code
+  if (clientData) return <ClientPortal clientData={clientData} onLogout={handleLogout} />;
+  
+  // Auth page - for code entry or admin login
+  if (!user || !token) return <AuthPage onLogin={handleLogin} onClientAccess={handleClientAccess} />;
 
+  // Admin or regular user dashboard
   const api = createAuthAxios(token);
   if (user.is_admin) return <AdminPanel api={api} onLogout={handleLogout} />;
   return <AppContent user={user} api={api} onLogout={handleLogout} />;
