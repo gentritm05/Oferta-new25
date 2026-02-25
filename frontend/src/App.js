@@ -1925,6 +1925,7 @@ const AppContent = ({ user, api, onLogout }) => {
   
   const navItems = [
     { id: "dashboard", label: "Paneli", icon: <HomeIcon /> },
+    { id: "client-codes", label: "Kodet e Klientëve", icon: <KeyIcon /> },
     { id: "products", label: "Produktet", icon: <PackageIcon /> },
     { id: "catalog", label: "Katalogu", icon: <WindowIcon /> },
     { id: "customers", label: "Klientët", icon: <UsersIcon /> },
