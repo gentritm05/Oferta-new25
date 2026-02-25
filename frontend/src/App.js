@@ -1076,6 +1076,239 @@ const Dashboard = ({ stats, onNavigate }) => {
   );
 };
 
+// Client Codes Page - Manage access codes for clients
+const ClientCodesPage = ({ api }) => {
+  const [codes, setCodes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({ client_name: "", client_phone: "", client_email: "", expires_days: "" });
+  const [creating, setCreating] = useState(false);
+
+  const loadCodes = useCallback(async () => {
+    try {
+      const response = await api.get("/client-access");
+      setCodes(response.data);
+    } catch (error) {
+      console.error("Error loading codes:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [api]);
+
+  useEffect(() => { loadCodes(); }, [loadCodes]);
+
+  const handleCreate = async () => {
+    if (!formData.client_name.trim()) {
+      alert("Emri i klientit është i nevojshëm");
+      return;
+    }
+    setCreating(true);
+    try {
+      const response = await api.post("/client-access/create", {
+        client_name: formData.client_name,
+        client_phone: formData.client_phone || null,
+        client_email: formData.client_email || null,
+        expires_days: formData.expires_days ? parseInt(formData.expires_days) : null
+      });
+      loadCodes();
+      setShowModal(false);
+      setFormData({ client_name: "", client_phone: "", client_email: "", expires_days: "" });
+      
+      // Show success with link
+      const link = `${window.location.origin}?code=${response.data.access_code}`;
+      alert(`Kodi u krijua: ${response.data.access_code}\n\nLinku: ${link}`);
+    } catch (error) {
+      alert("Gabim gjatë krijimit!");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleToggle = async (id) => {
+    try {
+      await api.put(`/client-access/${id}/toggle`);
+      loadCodes();
+    } catch (error) {
+      alert("Gabim!");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Jeni i sigurt që dëshironi të fshini këtë kod?")) return;
+    try {
+      await api.delete(`/client-access/${id}`);
+      loadCodes();
+    } catch (error) {
+      alert("Gabim!");
+    }
+  };
+
+  const copyLink = (code) => {
+    const link = `${window.location.origin}?code=${code}`;
+    navigator.clipboard.writeText(link);
+    alert("Linku u kopjua!");
+  };
+
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
+
+  return (
+    <div className="space-y-6" data-testid="client-codes-page">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-800">Kodet e Qasjes për Klientë</h1>
+        <button
+          onClick={() => setShowModal(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <PlusIcon /> Krijo Kod të Ri
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Klienti</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Kodi</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Statusi</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Skadon</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Qasja e Fundit</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Veprime</th>
+              </tr>
+            </thead>
+            <tbody>
+              {codes.map((code) => (
+                <tr key={code.id} className="border-b hover:bg-gray-50">
+                  <td className="px-4 py-3">
+                    <div>
+                      <div className="font-medium">{code.client_name}</div>
+                      {code.client_phone && <div className="text-sm text-gray-500">{code.client_phone}</div>}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <code className="bg-blue-100 text-blue-800 px-2 py-1 rounded font-mono text-sm">{code.access_code}</code>
+                  </td>
+                  <td className="px-4 py-3">
+                    {code.is_active ? (
+                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Aktiv</span>
+                    ) : (
+                      <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Çaktiv</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-500">
+                    {code.expires_at ? new Date(code.expires_at).toLocaleDateString("sq-AL") : "Asnjëherë"}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-500">
+                    {code.last_access ? new Date(code.last_access).toLocaleDateString("sq-AL") : "-"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => copyLink(code.access_code)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                        title="Kopjo Linkun"
+                      >
+                        <CopyIcon />
+                      </button>
+                      <button
+                        onClick={() => handleToggle(code.id)}
+                        className={`px-3 py-1 rounded text-sm ${code.is_active ? "bg-amber-100 text-amber-800 hover:bg-amber-200" : "bg-green-100 text-green-800 hover:bg-green-200"}`}
+                      >
+                        {code.is_active ? "Çaktivizo" : "Aktivizo"}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(code.id)}
+                        className="px-3 py-1 bg-red-100 text-red-800 rounded text-sm hover:bg-red-200"
+                      >
+                        Fshi
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {codes.length === 0 && (
+            <div className="text-center py-12 text-gray-500">
+              <KeyIcon />
+              <p className="mt-2">Nuk keni krijuar asnjë kod ende</p>
+              <button onClick={() => setShowModal(true)} className="mt-4 text-blue-600 hover:text-blue-700">
+                Krijo kodin e parë →
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Create Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold mb-4">Krijo Kod të Ri për Klient</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Emri i Klientit *</label>
+                <input
+                  type="text"
+                  value={formData.client_name}
+                  onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  placeholder="Ardian Hoxha"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Telefoni</label>
+                <input
+                  type="text"
+                  value={formData.client_phone}
+                  onChange={(e) => setFormData({ ...formData, client_phone: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  placeholder="+383 44 123 456"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={formData.client_email}
+                  onChange={(e) => setFormData({ ...formData, client_email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  placeholder="ardian@email.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Skadon pas (ditë)</label>
+                <input
+                  type="number"
+                  value={formData.expires_days}
+                  onChange={(e) => setFormData({ ...formData, expires_days: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  placeholder="Lëre bosh për pa skadim"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={() => setShowModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Anulo
+              </button>
+              <button
+                onClick={handleCreate}
+                disabled={creating}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                {creating ? "Duke krijuar..." : "Krijo Kodin"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Product Management Component
 const ProductManagement = ({ api, windowTypes, doorTypes, profiles, glassTypes, colors, hardware, onReload }) => {
   const [activeTab, setActiveTab] = useState("windows");
