@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Joke Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        #jokeBtn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: bold;
+        }
+        
+        #jokeBtn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        #jokeBtn:active {
+            transform: translateY(-1px);
+        }
+        
+        #jokeText {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            font-size: 1.2em;
+            line-height: 1.6;
+            color: #333;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-left: 5px solid #667eea;
+        }
+        
+        .loading {
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .error {
+            color: #e74c3c;
+        }
+        
+        .success {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎭 Shaka të Rastit</h1>
+        <p class="subtitle">Prit për të qeshur!</p>
+        <button id="jokeBtn">Gjej një Shaka!</button>
+        <p id="jokeText">Kliko butonin për të filluar...</p>
+    </div>
+
+    <script>
+        async function getRandomJoke() {
+            const response = await fetch('https://official-joke-api.appspot.com/jokes/random');
+            if (!response.ok) {
+                throw new Error('Nuk arrita të ngarkoj shakën');
+            }
+            const joke = await response.json();
+            return `${joke.setup}\n${joke.punchline}`;
+        }
+
+        document.getElementById('jokeBtn').onclick = async function() {
+            const jokeText = document.getElementById('jokeText');
+            jokeText.innerText = "⏳ Duke ngarkuar...";
+            jokeText.className = 'loading';
+            
+            try {
+                const joke = await getRandomJoke();
+                jokeText.innerText = joke;
+                jokeText.className = 'success';
+            } catch (error) {
+                jokeText.innerText = "❌ Gabim: " + error.message;
+                jokeText.className = 'error';
+            }
+        };
+    </script>
+</body>
+</html>
