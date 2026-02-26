@@ -1,0 +1,82 @@
+/* frontend/styles.css */
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+.container {
+    width: 90%;
+    margin: auto;
+}
+
+.header {
+    background: #4CAF50; /* Header color */
+    color: white;
+    padding: 1rem;
+    text-align: center;
+}
+
+.menu {
+    display: flex;
+    justify-content: space-around;
+    background: #333;
+    padding: 1rem;
+}
+
+.menu a {
+    color: white;
+    text-decoration: none;
+}
+
+.menu a:hover {
+    background: #575757;
+    padding: 0.5rem;
+}
+
+.main {
+    display: flex;
+    justify-content: space-between;
+    margin: 20px 0;
+}
+
+.sidebar {
+    flex: 1;
+    background: #fff;
+    padding: 1rem;
+    margin-right: 20px;
+}
+
+.content {
+    flex: 3;
+    background: #fff;
+    padding: 1rem;
+}
+
+.footer {
+    text-align: center;
+    padding: 1rem;
+    background: #333;
+    color: white;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .menu {
+        flex-direction: column;
+    }
+
+    .main {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        margin-right: 0;
+        margin-bottom: 20px;
+    }
+}
